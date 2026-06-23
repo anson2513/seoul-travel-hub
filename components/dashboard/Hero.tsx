@@ -37,7 +37,7 @@ export default function Hero() {
 
           <div className="mt-12">
             <p className="text-2xl">
-              10.11 — 10.15
+              10.10 — 10.15
             </p>
 
             <p className="mt-2 text-xl">

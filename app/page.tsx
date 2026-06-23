@@ -9,25 +9,20 @@ export default function Home() {
     <main className="bg-[#F7F5F2] min-h-screen">
       <div className="max-w-[430px] mx-auto">
 
-        {/* Hero */}
         <Hero />
 
-        {/* Travel Info */}
         <div className="-mt-16 relative z-10 px-4">
           <TravelInfoCard />
         </div>
 
-        {/* Today Schedule */}
         <div className="px-4 mt-4">
           <TodaySchedule />
         </div>
 
-        {/* Emergency */}
         <div className="px-4 mt-4 pb-36">
           <EmergencyCard />
         </div>
 
-        {/* Bottom Navigation */}
         <BottomNav />
 
       </div>

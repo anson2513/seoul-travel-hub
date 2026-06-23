@@ -1,126 +1,169 @@
+import {
+  Plane,
+  CloudSun,
+  BadgeDollarSign,
+} from "lucide-react";
+
 export default function TravelInfoCard() {
   return (
-    <div
+    <section
       className="
-        bg-white
-        rounded-[32px]
-        shadow-sm
-        overflow-hidden
-        border border-gray-100
+      bg-white
+      rounded-[32px]
+      shadow-sm
+      border
+      border-neutral-100
+      overflow-hidden
       "
     >
-      <div className="grid grid-cols-[1.7fr_1fr_1fr]">
+      {/* Flight Section */}
+      <div className="p-6">
 
-        {/* Flight */}
+        <div className="flex items-center gap-2 text-neutral-500">
+          <Plane size={16} />
+          <span className="text-sm font-medium">
+            航班資訊
+          </span>
+        </div>
 
-        <div className="p-5 border-r border-gray-100">
+        <div className="mt-5">
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">
-              ✈︎ 航班資訊
+          <p className="text-xs text-neutral-400">
+            Tigerair Taiwan
+          </p>
+
+          <p className="mt-1 text-sm font-medium text-neutral-500">
+            IT662
+          </p>
+
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-2xl font-bold">
+              KHH
+            </span>
+
+            <span className="text-neutral-400">
+              →
+            </span>
+
+            <span className="text-2xl font-bold">
+              GMP
             </span>
           </div>
 
-          <div className="mt-5">
-            <p className="text-[17px] font-semibold">
-              高雄 KHH → 首爾 ICN
-            </p>
-
-            <p className="mt-3 text-sm text-gray-400">
-              TW668
-            </p>
-          </div>
-
-          <div className="mt-6 flex items-center justify-between">
-            <div>
-              <p className="text-3xl font-bold">
-                08:35
-              </p>
-
-              <p className="text-xs text-gray-400 mt-1">
-                Terminal 1
-              </p>
-            </div>
-
-            <div className="text-gray-300 text-xl">
-              →
-            </div>
-
-            <div className="text-right">
-              <p className="text-3xl font-bold">
-                12:05
-              </p>
-
-              <p className="text-xs text-gray-400 mt-1">
-                Terminal 1
-              </p>
-            </div>
-          </div>
+          <p className="mt-2 text-sm text-neutral-500">
+            高雄國際機場 → 金浦國際機場
+          </p>
         </div>
 
-        {/* Weather */}
+        <div className="mt-6 flex items-center justify-between">
 
-        <div className="p-5 border-r border-gray-100 text-center">
+          <div>
+            <p className="text-xs text-neutral-400">
+              起飛
+            </p>
 
-          <p className="text-xs text-gray-500">
-            ☁︎ 首爾天氣
-          </p>
-
-          <div className="text-4xl mt-4">
-            🌤️
+            <p className="text-3xl font-bold">
+              15:55
+            </p>
           </div>
 
-          <p className="text-4xl font-bold mt-3">
-            23°
-          </p>
+          <div className="text-neutral-300 text-2xl">
+            →
+          </div>
 
-          <p className="text-sm text-gray-500 mt-2">
-            多雲
-          </p>
+          <div className="text-right">
+            <p className="text-xs text-neutral-400">
+              抵達
+            </p>
 
-          <p className="text-xs text-gray-400 mt-4">
-            體感 25℃
-          </p>
+            <p className="text-3xl font-bold">
+              19:45
+            </p>
+          </div>
 
-          <p className="text-xs text-gray-400">
-            降雨機率 20%
-          </p>
+        </div>
+
+        <div className="mt-4 text-sm text-neutral-500">
+          2026.10.10（六）
+        </div>
+
+      </div>
+
+      {/* Divider */}
+      <div className="border-t border-neutral-100" />
+
+      {/* Weather + Exchange */}
+      <div className="grid grid-cols-2">
+
+        {/* Weather */}
+        <div className="p-5 border-r border-neutral-100">
+
+          <div className="flex items-center gap-2 text-neutral-500">
+            <CloudSun size={16} />
+            <span className="text-sm font-medium">
+              首爾天氣
+            </span>
+          </div>
+
+          <div className="mt-4 text-center">
+
+            <div className="text-4xl">
+              ⛅
+            </div>
+
+            <p className="mt-2 text-3xl font-bold">
+              23°
+            </p>
+
+            <p className="mt-1 text-sm text-neutral-500">
+              多雲
+            </p>
+
+            <p className="mt-2 text-xs text-neutral-400">
+              體感 25°
+            </p>
+
+          </div>
 
         </div>
 
         {/* Exchange */}
+        <div className="p-5">
 
-        <div className="p-5 text-center">
+          <div className="flex items-center gap-2 text-neutral-500">
+            <BadgeDollarSign size={16} />
+            <span className="text-sm font-medium">
+              即時匯率
+            </span>
+          </div>
 
-          <p className="text-xs text-gray-500">
-            ₩ 匯率（即時）
-          </p>
+          <div className="mt-4 text-center">
 
-          <div className="mt-6">
-            <p className="text-2xl font-semibold">
+            <p className="text-lg font-semibold">
               1 KRW
             </p>
 
-            <p className="my-3 text-gray-400">
+            <p className="my-2 text-neutral-400">
               =
             </p>
 
-            <p className="text-4xl font-bold">
+            <p className="text-3xl font-bold">
               0.024
             </p>
 
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-neutral-500">
               TWD
             </p>
-          </div>
 
-          <p className="text-xs text-gray-400 mt-6">
-            更新時間 09:41
-          </p>
+            <p className="mt-2 text-xs text-neutral-400">
+              更新時間 09:41
+            </p>
+
+          </div>
 
         </div>
 
       </div>
-    </div>
+    </section>
   );
 }
