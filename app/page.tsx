@@ -17,27 +17,25 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-[#F7F5F2]">
       <div className="mx-auto max-w-[430px] overflow-hidden bg-[#F7F5F2]">
-
         <Hero />
 
-        <div className="relative z-10 -mt-20 px-4">
+        <div className="relative z-10 -mt-6 px-4">
           <TravelInfoCard
             exchange={exchange}
-            flight={flights[0]}
+            flights={flights}
             weather={weather}
           />
         </div>
 
-        <div className="px-4 mt-4">
+        <div className="mt-4 px-4">
           <TodaySchedule items={todaySchedulePreview} />
         </div>
 
-        <div className="px-4 mt-4 pb-36">
+        <div className="mt-4 px-4 pb-36">
           <EmergencyCard />
         </div>
 
         <BottomNav />
-
       </div>
     </main>
   );
