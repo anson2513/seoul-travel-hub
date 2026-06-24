@@ -1,7 +1,7 @@
 # SEOUL Travel Hub Handoff
 
-Date: 2026-06-23
-Next session target: 2026-06-24
+Date: 2026-06-24
+Status: V1.5 Home Dashboard shipped to GitHub and Vercel
 
 ## Project Location
 
@@ -88,52 +88,47 @@ npm.cmd run build
 
 The first build failed because Google Fonts could not be fetched. That was fixed by removing `next/font/google`.
 
-## Not Finished Yet
+Mobile verification:
 
-- Changes have not been committed.
-- Changes have not been pushed to GitHub.
-- Vercel has not redeployed these local changes.
-- Mobile browser visual check was attempted, but the background dev server did not stay reachable.
-- Need to restart local preview next time and verify the UI on mobile viewport.
+- Checked at mobile widths around 375px and 415px.
+- No horizontal overflow.
+- Hero, IT662 flight data, weather section, KRW/TWD exchange section, schedule preview, emergency links, and bottom nav render correctly.
+- `tel:119`, `tel:1330`, and `tel:+8227381038` are present.
 
-## Next Steps
+Deployment:
 
-1. Start local preview:
-
-```text
-npm.cmd run dev -- --hostname 127.0.0.1 --port 3000
-```
-
-2. Open:
-
-```text
-http://127.0.0.1:3000
-```
-
-3. Verify mobile Home Dashboard:
-
-- Hero spacing
-- TravelInfoCard three-section layout
-- IT662 flight text
-- weather values
-- KRW/TWD exchange rate
-- emergency `tel:` links
-- bottom nav spacing
-
-4. If good, commit and push:
-
-```text
-git status
-git add .
-git commit -m "Build V1.5 home dashboard"
-git push
-```
-
-5. Check Vercel deployment:
+- Commit pushed to GitHub: `f6c842e Build V1.5 home dashboard`
+- Vercel production URL checked and returned 200:
 
 ```text
 https://seoul-travel-hub.vercel.app/
 ```
+
+- Production HTML includes the updated title, Hero, IT662 flight data, weather labels, exchange labels, and emergency phone links.
+
+## Next Steps
+
+1. Open production site on mobile:
+
+```text
+https://seoul-travel-hub.vercel.app/
+```
+
+2. Visually compare Home against the approved mockup:
+
+- Hero height and text placement
+- TravelInfoCard three-section layout
+- TodaySchedule spacing and thumbnail balance
+- EmergencyCard mobile spacing
+- BottomNav spacing
+
+3. If Home is accepted, start Itinerary Page:
+
+- Day 1 to Day 5 tabs
+- Timeline sorted by time
+- Add itinerary form
+- Mobile photo upload from gallery
+- Drag sorting later in the iteration
 
 ## Notes For Next Session
 
