@@ -53,6 +53,10 @@ type ExchangeRateResponse = {
   time_last_update_utc?: string;
 };
 
+type LiveFetchOptions = {
+  refresh?: boolean;
+};
+
 const seoul = {
   latitude: 37.5665,
   longitude: 126.978,
@@ -102,7 +106,11 @@ function openMeteoDescription(code?: number) {
   return { text: "天氣資料", icon: "☁️" };
 }
 
-async function getOpenWeather(): Promise<WeatherInfo | null> {
+function fetchCacheOptions(revalidateSeconds: number, refresh?: boolean) {
+  return refresh ? { cache: "no-store" as const } : { next: { revalidate: revalidateSeconds } };
+}
+
+async function getOpenWeather(options: LiveFetchOptions = {}): Promise<WeatherInfo | null> {
   const apiKey = process.env.OPENWEATHER_API_KEY;
 
   if (!apiKey) return null;
@@ -117,7 +125,7 @@ async function getOpenWeather(): Promise<WeatherInfo | null> {
 
   const response = await fetch(
     `https://api.openweathermap.org/data/2.5/forecast?${params.toString()}`,
-    { next: { revalidate: 900 } },
+    fetchCacheOptions(900, options.refresh),
   );
 
   if (!response.ok) return null;
@@ -141,7 +149,7 @@ async function getOpenWeather(): Promise<WeatherInfo | null> {
   };
 }
 
-async function getOpenMeteo(): Promise<WeatherInfo> {
+async function getOpenMeteo(options: LiveFetchOptions = {}): Promise<WeatherInfo> {
   const params = new URLSearchParams({
     latitude: String(seoul.latitude),
     longitude: String(seoul.longitude),
@@ -153,7 +161,7 @@ async function getOpenMeteo(): Promise<WeatherInfo> {
 
   const response = await fetch(
     `https://api.open-meteo.com/v1/forecast?${params.toString()}`,
-    { next: { revalidate: 900 } },
+    fetchCacheOptions(900, options.refresh),
   );
 
   if (!response.ok) {
@@ -192,9 +200,9 @@ async function getOpenMeteo(): Promise<WeatherInfo> {
   };
 }
 
-export async function getSeoulWeather(): Promise<WeatherInfo> {
+export async function getSeoulWeather(options: LiveFetchOptions = {}): Promise<WeatherInfo> {
   try {
-    return (await getOpenWeather()) ?? (await getOpenMeteo());
+    return (await getOpenWeather(options)) ?? (await getOpenMeteo(options));
   } catch {
     return {
       source: "Open-Meteo",
@@ -209,10 +217,10 @@ export async function getSeoulWeather(): Promise<WeatherInfo> {
   }
 }
 
-export async function getKrwTwdRate(): Promise<ExchangeInfo> {
+export async function getKrwTwdRate(options: LiveFetchOptions = {}): Promise<ExchangeInfo> {
   try {
     const response = await fetch("https://open.er-api.com/v6/latest/KRW", {
-      next: { revalidate: 3600 },
+      ...fetchCacheOptions(3600, options.refresh),
     });
 
     if (!response.ok) throw new Error("Exchange request failed");
