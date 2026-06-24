@@ -1,95 +1,61 @@
-export default function TodaySchedule() {
-  const schedule = [
-    {
-      time: "09:00",
-      title: "早餐",
-      subtitle: "Cafe Layered",
-      image:
-        "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=800&auto=format&fit=crop",
-    },
-    {
-      time: "10:30",
-      title: "景福宮",
-      subtitle: "Gyeongbokgung Palace",
-      image:
-        "https://images.unsplash.com/photo-1538485399081-7c897c1ab8b3?q=80&w=800&auto=format&fit=crop",
-    },
-    {
-      time: "13:00",
-      title: "土俗村參雞湯",
-      subtitle: "Tosokchon Samgyetang",
-      image:
-        "https://images.unsplash.com/photo-1547592180-85f173990554?q=80&w=800&auto=format&fit=crop",
-    },
-    {
-      time: "15:30",
-      title: "北村韓屋村",
-      subtitle: "Bukchon Hanok Village",
-      image:
-        "https://images.unsplash.com/photo-1517154421773-0529f29ea451?q=80&w=800&auto=format&fit=crop",
-    },
-  ];
+import { CalendarDays, ChevronRight } from "lucide-react";
+import type { SchedulePreviewItem } from "@/lib/travel-data";
 
+type TodayScheduleProps = {
+  items: SchedulePreviewItem[];
+};
+
+export default function TodaySchedule({ items }: TodayScheduleProps) {
   return (
-    <section className="bg-white rounded-[28px] p-5 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">
-            今日行程
-          </h2>
-
-          <p className="text-sm text-gray-400 mt-1">
-            Today Schedule
-          </p>
+    <section className="rounded-[28px] border border-neutral-200/80 bg-white p-5 shadow-sm">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <CalendarDays size={21} strokeWidth={2.1} />
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <h2 className="text-lg font-bold text-neutral-950">今日行程</h2>
+            <p className="text-sm font-semibold text-neutral-500">
+              Today Schedule
+            </p>
+          </div>
         </div>
 
-        <button className="text-sm text-gray-500">
-          查看完整行程 →
+        <button
+          className="flex shrink-0 items-center gap-1 text-sm font-bold text-neutral-800"
+          type="button"
+        >
+          查看完整行程
+          <ChevronRight size={16} />
         </button>
       </div>
 
       <div className="mt-6 space-y-5">
-        {schedule.map((item, index) => (
-          <div
-            key={index}
-            className="flex items-center justify-between"
-          >
-            <div className="flex items-center flex-1">
-              <div className="w-16 shrink-0">
-                <p className="font-semibold text-gray-900">
-                  {item.time}
-                </p>
-              </div>
-
-              <div className="mx-3 flex flex-col items-center">
-                <div className="w-3 h-3 rounded-full border-2 border-gray-300 bg-white" />
-
-                {index !== schedule.length - 1 && (
-                  <div className="w-[2px] h-14 bg-gray-200" />
-                )}
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-gray-900">
-                  {item.title}
-                </h3>
-
-                <p className="text-sm text-gray-500 mt-1">
-                  {item.subtitle}
-                </p>
-              </div>
+        {items.map((item, index) => (
+          <div key={`${item.time}-${item.title}`} className="flex gap-3">
+            <div className="w-14 shrink-0 pt-1">
+              <p className="text-sm font-bold text-neutral-950">{item.time}</p>
             </div>
 
-            <img
-              src={item.image}
-              alt={item.title}
-              className="
-                w-20
-                h-20
-                object-cover
-                rounded-2xl
-                ml-3
-              "
+            <div className="flex flex-col items-center">
+              <div className="h-4 w-4 rounded-full border-[3px] border-neutral-300 bg-white" />
+              {index !== items.length - 1 && (
+                <div className="mt-1 h-14 w-px bg-neutral-200" />
+              )}
+            </div>
+
+            <div className="min-w-0 flex-1 pb-2">
+              <h3 className="text-base font-bold text-neutral-950">
+                {item.title}
+              </h3>
+              <p className="mt-1 text-sm font-medium text-neutral-500">
+                {item.subtitle}
+              </p>
+            </div>
+
+            <div
+              aria-label={item.title}
+              className="h-16 w-24 shrink-0 rounded-xl bg-neutral-100 bg-cover bg-center"
+              role="img"
+              style={{ backgroundImage: `url(${item.image})` }}
             />
           </div>
         ))}

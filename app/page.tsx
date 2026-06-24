@@ -3,20 +3,33 @@ import TravelInfoCard from "@/components/dashboard/TravelInfoCard";
 import TodaySchedule from "@/components/dashboard/TodaySchedule";
 import EmergencyCard from "@/components/dashboard/EmergencyCard";
 import BottomNav from "@/components/dashboard/BottomNav";
+import { getKrwTwdRate, getSeoulWeather } from "@/lib/live-info";
+import { flights, todaySchedulePreview } from "@/lib/travel-data";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const [weather, exchange] = await Promise.all([
+    getSeoulWeather(),
+    getKrwTwdRate(),
+  ]);
+
   return (
-    <main className="bg-[#F7F5F2] min-h-screen">
-      <div className="max-w-[430px] mx-auto">
+    <main className="min-h-screen bg-[#F7F5F2]">
+      <div className="mx-auto max-w-[430px] overflow-hidden bg-[#F7F5F2]">
 
         <Hero />
 
-        <div className="-mt-16 relative z-10 px-4">
-          <TravelInfoCard />
+        <div className="relative z-10 -mt-20 px-4">
+          <TravelInfoCard
+            exchange={exchange}
+            flight={flights[0]}
+            weather={weather}
+          />
         </div>
 
         <div className="px-4 mt-4">
-          <TodaySchedule />
+          <TodaySchedule items={todaySchedulePreview} />
         </div>
 
         <div className="px-4 mt-4 pb-36">

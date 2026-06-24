@@ -1,80 +1,42 @@
-import {
-  Home,
-  CalendarDays,
-  FileText,
-  Camera,
-} from "lucide-react";
+import { CalendarDays, Camera, FileText, Home } from "lucide-react";
+
+const navItems = [
+  { label: "首頁", icon: Home, active: true },
+  { label: "行程", icon: CalendarDays, active: false },
+  { label: "記帳", icon: FileText, active: false },
+  { label: "Photo Map", icon: Camera, active: false },
+];
 
 export default function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50">
-      <div className="max-w-[430px] mx-auto px-4 pb-3">
+    <nav className="fixed inset-x-0 bottom-0 z-50">
+      <div className="mx-auto max-w-[430px] px-4 pb-3">
+        <div className="flex h-24 items-center justify-around rounded-[30px] border border-neutral-200/80 bg-white/95 shadow-[0_-10px_35px_rgba(39,31,27,0.08)] backdrop-blur-xl">
+          {navItems.map((item) => {
+            const Icon = item.icon;
 
-        <div
-          className="
-            bg-white/95
-            backdrop-blur-xl
-            rounded-[32px]
-            shadow-[0_-8px_30px_rgba(0,0,0,0.08)]
-            border
-            border-gray-100
-            h-20
-            flex
-            items-center
-            justify-around
-          "
-        >
-
-          <button className="flex flex-col items-center">
-            <Home
-              size={22}
-              strokeWidth={2.2}
-              className="text-black"
-            />
-
-            <span className="text-[11px] font-medium mt-1 text-black">
-              首頁
-            </span>
-          </button>
-
-          <button className="flex flex-col items-center">
-            <CalendarDays
-              size={22}
-              strokeWidth={1.8}
-              className="text-gray-400"
-            />
-
-            <span className="text-[11px] mt-1 text-gray-400">
-              行程
-            </span>
-          </button>
-
-          <button className="flex flex-col items-center">
-            <FileText
-              size={22}
-              strokeWidth={1.8}
-              className="text-gray-400"
-            />
-
-            <span className="text-[11px] mt-1 text-gray-400">
-              記帳
-            </span>
-          </button>
-
-          <button className="flex flex-col items-center">
-            <Camera
-              size={22}
-              strokeWidth={1.8}
-              className="text-gray-400"
-            />
-
-            <span className="text-[11px] mt-1 text-gray-400">
-              Photo Map
-            </span>
-          </button>
-
+            return (
+              <button
+                key={item.label}
+                className="flex min-h-16 min-w-16 flex-col items-center justify-center gap-1 rounded-2xl"
+                type="button"
+              >
+                <Icon
+                  size={27}
+                  strokeWidth={item.active ? 2.35 : 1.9}
+                  className={item.active ? "text-neutral-950" : "text-neutral-400"}
+                />
+                <span
+                  className={`text-sm font-semibold ${
+                    item.active ? "text-neutral-950" : "text-neutral-500"
+                  }`}
+                >
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
-
       </div>
     </nav>
   );
