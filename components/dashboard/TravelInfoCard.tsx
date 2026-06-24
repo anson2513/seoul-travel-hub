@@ -13,17 +13,35 @@ type TravelInfoCardProps = {
 
 type LiveStatus = "idle" | "loading" | "error";
 
+function clientTime() {
+  return new Intl.DateTimeFormat("zh-TW", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date());
+}
+
 function displayRate(rate: number | null) {
   if (!rate) return "更新中";
-  return rate.toFixed(4);
+  return rate.toFixed(2);
 }
 
 function displayTemp(value: number | null) {
   return value === null ? "更新中" : `${value}°C`;
 }
 
+function metricTextClass(value: number | null) {
+  return value === null ? "text-2xl" : "text-4xl";
+}
+
+function rateTextClass(rate: number | null) {
+  return rate === null ? "text-2xl" : "text-3xl";
+}
+
 function refreshIconClass(status: LiveStatus) {
-  return status === "loading" ? "animate-spin text-neutral-950" : "text-neutral-400";
+  return status === "loading"
+    ? "animate-spin text-neutral-950"
+    : "text-neutral-400";
 }
 
 export default function TravelInfoCard({
@@ -42,7 +60,8 @@ export default function TravelInfoCard({
     try {
       const response = await fetch("/api/weather", { cache: "no-store" });
       if (!response.ok) throw new Error("Weather refresh failed");
-      setWeather((await response.json()) as WeatherInfo);
+      const nextWeather = (await response.json()) as WeatherInfo;
+      setWeather({ ...nextWeather, updatedAt: clientTime() });
       setWeatherStatus("idle");
     } catch {
       setWeatherStatus("error");
@@ -55,7 +74,8 @@ export default function TravelInfoCard({
     try {
       const response = await fetch("/api/exchange", { cache: "no-store" });
       if (!response.ok) throw new Error("Exchange refresh failed");
-      setExchange((await response.json()) as ExchangeInfo);
+      const nextExchange = (await response.json()) as ExchangeInfo;
+      setExchange({ ...nextExchange, updatedAt: clientTime() });
       setExchangeStatus("idle");
     } catch {
       setExchangeStatus("error");
@@ -129,7 +149,11 @@ export default function TravelInfoCard({
             <div className="text-5xl leading-none" aria-hidden="true">
               {weather.icon}
             </div>
-            <p className="mt-4 text-4xl font-bold leading-none text-neutral-950">
+            <p
+              className={`mt-4 font-bold leading-none text-neutral-950 ${metricTextClass(
+                weather.temperature,
+              )}`}
+            >
               {displayTemp(weather.temperature)}
             </p>
             <p className="mt-3 text-sm font-bold text-neutral-500">
@@ -144,7 +168,9 @@ export default function TravelInfoCard({
               {weather.rainChance === null ? "更新中" : `${weather.rainChance}%`}
             </p>
             <p className="text-neutral-400">
-              {weatherStatus === "error" ? "更新失敗，點擊重試" : `更新 ${weather.updatedAt}`}
+              {weatherStatus === "error"
+                ? "更新失敗，點擊重試"
+                : `更新 ${weather.updatedAt}`}
             </p>
           </div>
         </button>
@@ -167,12 +193,16 @@ export default function TravelInfoCard({
           </div>
 
           <div className="mt-8 text-center">
-            <p className="text-lg font-bold text-neutral-950">1 KRW</p>
+            <p className="text-lg font-bold text-neutral-950">1 TWD</p>
             <p className="my-3 text-xl font-semibold text-neutral-300">=</p>
-            <p className="text-3xl font-bold leading-none text-neutral-950">
+            <p
+              className={`font-bold leading-none text-neutral-950 ${rateTextClass(
+                exchange.rate,
+              )}`}
+            >
               {displayRate(exchange.rate)}
             </p>
-            <p className="mt-2 text-base font-bold text-neutral-500">TWD</p>
+            <p className="mt-2 text-base font-bold text-neutral-500">KRW</p>
           </div>
 
           <div className="mt-auto text-center text-xs font-semibold text-neutral-400">

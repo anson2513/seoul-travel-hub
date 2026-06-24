@@ -3,7 +3,7 @@ import TravelInfoCard from "@/components/dashboard/TravelInfoCard";
 import TodaySchedule from "@/components/dashboard/TodaySchedule";
 import EmergencyCard from "@/components/dashboard/EmergencyCard";
 import BottomNav from "@/components/dashboard/BottomNav";
-import { getKrwTwdRate, getSeoulWeather } from "@/lib/live-info";
+import { getSeoulWeather, getTwdKrwRate } from "@/lib/live-info";
 import { flights, todaySchedulePreview } from "@/lib/travel-data";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const [weather, exchange] = await Promise.all([
     getSeoulWeather(),
-    getKrwTwdRate(),
+    getTwdKrwRate(),
   ]);
 
   return (

@@ -11,15 +11,14 @@ export type WeatherInfo = {
 
 export type ExchangeInfo = {
   source: "ExchangeRate API";
-  base: "KRW";
-  target: "TWD";
+  base: "TWD";
+  target: "KRW";
   rate: number | null;
   updatedAt: string;
 };
 
 type OpenWeatherForecast = {
   list?: Array<{
-    dt?: number;
     pop?: number;
     main?: {
       temp?: number;
@@ -48,9 +47,8 @@ type OpenMeteoForecast = {
 
 type ExchangeRateResponse = {
   rates?: {
-    TWD?: number;
+    KRW?: number;
   };
-  time_last_update_utc?: string;
 };
 
 type LiveFetchOptions = {
@@ -62,24 +60,27 @@ const seoul = {
   longitude: 126.978,
 };
 
-function formatTime(value?: string | number) {
-  const date =
-    typeof value === "number"
-      ? new Date(value * 1000)
-      : value
-        ? new Date(value)
-        : new Date();
-
+function formatNow() {
   return new Intl.DateTimeFormat("zh-TW", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
     timeZone: "Asia/Taipei",
-  }).format(date);
+  }).format(new Date());
 }
 
 function round(value?: number | null) {
   return typeof value === "number" ? Math.round(value) : null;
+}
+
+function fetchCacheOptions(revalidateSeconds: number, refresh?: boolean) {
+  return refresh
+    ? { cache: "no-store" as const }
+    : { next: { revalidate: revalidateSeconds } };
+}
+
+function timeoutSignal() {
+  return AbortSignal.timeout(3500);
 }
 
 function openWeatherIcon(icon?: string) {
@@ -101,16 +102,16 @@ function openMeteoDescription(code?: number) {
   if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code ?? -1)) {
     return { text: "有雨", icon: "🌧️" };
   }
-  if ([71, 73, 75, 85, 86].includes(code ?? -1)) return { text: "下雪", icon: "❄️" };
+  if ([71, 73, 75, 85, 86].includes(code ?? -1)) {
+    return { text: "下雪", icon: "❄️" };
+  }
   if ([95, 96, 99].includes(code ?? -1)) return { text: "雷雨", icon: "⛈️" };
   return { text: "天氣資料", icon: "☁️" };
 }
 
-function fetchCacheOptions(revalidateSeconds: number, refresh?: boolean) {
-  return refresh ? { cache: "no-store" as const } : { next: { revalidate: revalidateSeconds } };
-}
-
-async function getOpenWeather(options: LiveFetchOptions = {}): Promise<WeatherInfo | null> {
+async function getOpenWeather(
+  options: LiveFetchOptions = {},
+): Promise<WeatherInfo | null> {
   const apiKey = process.env.OPENWEATHER_API_KEY;
 
   if (!apiKey) return null;
@@ -125,7 +126,10 @@ async function getOpenWeather(options: LiveFetchOptions = {}): Promise<WeatherIn
 
   const response = await fetch(
     `https://api.openweathermap.org/data/2.5/forecast?${params.toString()}`,
-    fetchCacheOptions(900, options.refresh),
+    {
+      ...fetchCacheOptions(900, options.refresh),
+      signal: timeoutSignal(),
+    },
   );
 
   if (!response.ok) return null;
@@ -145,7 +149,7 @@ async function getOpenWeather(options: LiveFetchOptions = {}): Promise<WeatherIn
     rainChance: round((current.pop ?? 0) * 100),
     description: weather?.description ?? weather?.main ?? "天氣資料",
     icon: openWeatherIcon(weather?.icon),
-    updatedAt: formatTime(current.dt),
+    updatedAt: formatNow(),
   };
 }
 
@@ -161,7 +165,10 @@ async function getOpenMeteo(options: LiveFetchOptions = {}): Promise<WeatherInfo
 
   const response = await fetch(
     `https://api.open-meteo.com/v1/forecast?${params.toString()}`,
-    fetchCacheOptions(900, options.refresh),
+    {
+      ...fetchCacheOptions(900, options.refresh),
+      signal: timeoutSignal(),
+    },
   );
 
   if (!response.ok) {
@@ -173,7 +180,7 @@ async function getOpenMeteo(options: LiveFetchOptions = {}): Promise<WeatherInfo
       rainChance: null,
       description: "暫無天氣資料",
       icon: "☁️",
-      updatedAt: formatTime(),
+      updatedAt: formatNow(),
     };
   }
 
@@ -196,11 +203,13 @@ async function getOpenMeteo(options: LiveFetchOptions = {}): Promise<WeatherInfo
     rainChance: round(rainChance),
     description: description.text,
     icon: description.icon,
-    updatedAt: formatTime(currentTime),
+    updatedAt: formatNow(),
   };
 }
 
-export async function getSeoulWeather(options: LiveFetchOptions = {}): Promise<WeatherInfo> {
+export async function getSeoulWeather(
+  options: LiveFetchOptions = {},
+): Promise<WeatherInfo> {
   try {
     return (await getOpenWeather(options)) ?? (await getOpenMeteo(options));
   } catch {
@@ -212,15 +221,18 @@ export async function getSeoulWeather(options: LiveFetchOptions = {}): Promise<W
       rainChance: null,
       description: "暫無天氣資料",
       icon: "☁️",
-      updatedAt: formatTime(),
+      updatedAt: formatNow(),
     };
   }
 }
 
-export async function getKrwTwdRate(options: LiveFetchOptions = {}): Promise<ExchangeInfo> {
+export async function getTwdKrwRate(
+  options: LiveFetchOptions = {},
+): Promise<ExchangeInfo> {
   try {
-    const response = await fetch("https://open.er-api.com/v6/latest/KRW", {
+    const response = await fetch("https://open.er-api.com/v6/latest/TWD", {
       ...fetchCacheOptions(3600, options.refresh),
+      signal: timeoutSignal(),
     });
 
     if (!response.ok) throw new Error("Exchange request failed");
@@ -229,18 +241,18 @@ export async function getKrwTwdRate(options: LiveFetchOptions = {}): Promise<Exc
 
     return {
       source: "ExchangeRate API",
-      base: "KRW",
-      target: "TWD",
-      rate: data.rates?.TWD ?? null,
-      updatedAt: formatTime(data.time_last_update_utc),
+      base: "TWD",
+      target: "KRW",
+      rate: data.rates?.KRW ?? null,
+      updatedAt: formatNow(),
     };
   } catch {
     return {
       source: "ExchangeRate API",
-      base: "KRW",
-      target: "TWD",
+      base: "TWD",
+      target: "KRW",
       rate: null,
-      updatedAt: formatTime(),
+      updatedAt: formatNow(),
     };
   }
 }
