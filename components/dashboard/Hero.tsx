@@ -3,7 +3,7 @@ export default function Hero() {
     <section
       className="relative h-[360px] overflow-hidden bg-cover bg-center text-white"
       style={{
-        backgroundImage: "url('/images/hero.jpg')",
+        backgroundImage: "url('/images/hero-upload-clean.png')",
       }}
     >
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/5 to-black/30" />
