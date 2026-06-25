@@ -9,7 +9,6 @@ import {
   expenseCategoryLabels,
   fallbackKrwPerTwd,
   paymentMethodLabels,
-  taxFreeNearThresholdKrw,
   taxFreeThresholdKrw,
   taxStatusLabels,
   type AccountingState,
@@ -36,6 +35,14 @@ type ExpenseFormState = {
 
 type TaxFilter = "all" | "unrefunded";
 
+type TaxRefundTier = {
+  min: number;
+  max: number;
+  refundMin: number;
+  refundMax: number;
+  rateLabel: string;
+};
+
 const emptyExpenseForm: ExpenseFormState = {
   title: "",
   date: "2026-10-10",
@@ -45,6 +52,22 @@ const emptyExpenseForm: ExpenseFormState = {
   currency: "KRW",
   amount: "",
 };
+
+const taxRefundTiers: TaxRefundTier[] = [
+  { min: 15000, max: 29999, refundMin: 500, refundMax: 1000, rateLabel: "3%-4%" },
+  { min: 30000, max: 49999, refundMin: 1500, refundMax: 2000, rateLabel: "3%-6.7%" },
+  { min: 50000, max: 74999, refundMin: 3000, refundMax: 3500, rateLabel: "4%-7%" },
+  { min: 75000, max: 99999, refundMin: 5000, refundMax: 5000, rateLabel: "5%-6.7%" },
+  { min: 100000, max: 124999, refundMin: 6000, refundMax: 7000, rateLabel: "4.8%-7%" },
+  { min: 125000, max: 149999, refundMin: 8000, refundMax: 8000, rateLabel: "5.3%-6.4%" },
+  { min: 150000, max: 174999, refundMin: 9000, refundMax: 9500, rateLabel: "5.1%-6.3%" },
+  { min: 175000, max: 199999, refundMin: 10000, refundMax: 11000, rateLabel: "5%-6.3%" },
+  { min: 200000, max: 224999, refundMin: 12000, refundMax: 12500, rateLabel: "5.3%-6.25%" },
+  { min: 225000, max: 249999, refundMin: 13000, refundMax: 14000, rateLabel: "5.2%-6.2%" },
+  { min: 250000, max: 274999, refundMin: 15000, refundMax: 16000, rateLabel: "5.45%-6.4%" },
+];
+
+const taxUpgradeWindowKrw = 5000;
 
 function readStoredAccounting() {
   if (typeof window === "undefined") return defaultAccountingState;
@@ -77,8 +100,17 @@ function formatTwd(value: number) {
 }
 
 function formatKrw(value: number, withParentheses = true) {
-  const text = `₩ ${formatNumber(value)}`;
+  const text = `₩${formatNumber(value)}`;
   return withParentheses ? `(${text})` : text;
+}
+
+function formatTwdRefund(minKrw: number, maxKrw: number, rateKrwPerTwd: number) {
+  const minTwd = Math.round(minKrw / rateKrwPerTwd);
+  const maxTwd = Math.round(maxKrw / rateKrwPerTwd);
+
+  if (minTwd === maxTwd) return `TWD ${formatNumber(minTwd)}元`;
+
+  return `TWD ${formatNumber(minTwd)}-${formatNumber(maxTwd)}元`;
 }
 
 function displayDate(date: string) {
@@ -121,27 +153,59 @@ function toKrw(expense: ExpenseEntry) {
   return expense.amount * expense.rateKrwPerTwd;
 }
 
-function taxHintForKrw(krwAmount: number, taxStatus: TaxStatus) {
+function getTaxRefundTier(krwAmount: number) {
+  return taxRefundTiers.find(
+    (tier) => krwAmount >= tier.min && krwAmount <= tier.max,
+  );
+}
+
+function getNextTaxRefundTier(krwAmount: number) {
+  return taxRefundTiers.find((tier) => krwAmount < tier.min);
+}
+
+function taxHintForKrw(
+  krwAmount: number,
+  taxStatus: TaxStatus,
+  rateKrwPerTwd: number,
+) {
   if (taxStatus === "refunded") {
     return {
       label: "已退稅",
       detail: "這筆已完成退稅",
+      strategy: "",
       className: "bg-emerald-50 text-emerald-700",
     };
   }
 
+  const currentTier = getTaxRefundTier(krwAmount);
+  const nextTier = getNextTaxRefundTier(krwAmount);
+  const upgradeTier =
+    nextTier &&
+    nextTier.min - krwAmount > 0 &&
+    nextTier.min - krwAmount <= taxUpgradeWindowKrw
+      ? nextTier
+      : null;
+
   if (krwAmount >= taxFreeThresholdKrw) {
+    const refundText = currentTier
+      ? formatTwdRefund(currentTier.refundMin, currentTier.refundMax, rateKrwPerTwd)
+      : "以現場級距為準";
+
     return {
       label: taxStatus === "pending" ? "未退稅" : "可退稅",
-      detail: `滿 ${formatKrw(taxFreeThresholdKrw, false)} 可辦理退稅`,
+      detail: `滿 ${formatKrw(taxFreeThresholdKrw, false)} 可辦理退稅　預估退稅 ${refundText}`,
+      strategy: upgradeTier
+        ? `再多 ${formatKrw(upgradeTier.min - krwAmount, false)} 可升級退稅 ${upgradeTier.rateLabel} 資格`
+        : "",
       className: "bg-orange-50 text-orange-700",
     };
   }
 
-  if (krwAmount >= taxFreeNearThresholdKrw) {
+  if (upgradeTier) {
     return {
-      label: `差 ${formatKrw(taxFreeThresholdKrw - krwAmount, false)}`,
-      detail: "再多一點就有退稅資格",
+      label: `差 ${formatKrw(upgradeTier.min - krwAmount, false)}`,
+      detail: `再多 ${formatKrw(upgradeTier.min - krwAmount, false)} 可達退稅門檻`,
+      strategy: `達標後可退稅 ${upgradeTier.rateLabel} 資格`,
       className: "bg-amber-50 text-amber-700",
     };
   }
@@ -231,7 +295,11 @@ export default function AccountingClient({ initialRate }: AccountingClientProps)
     formState.currency === "KRW" ? previewAmount : previewAmount * rateKrwPerTwd;
   const previewTwd =
     formState.currency === "TWD" ? previewAmount : previewAmount / rateKrwPerTwd;
-  const previewTaxHint = taxHintForKrw(previewKrw, formState.taxStatus);
+  const previewTaxHint = taxHintForKrw(
+    previewKrw,
+    formState.taxStatus,
+    rateKrwPerTwd,
+  );
 
   function resetForm() {
     setEditingId(null);
@@ -305,13 +373,15 @@ export default function AccountingClient({ initialRate }: AccountingClientProps)
   }
 
   function deleteExpense() {
-    if (!editingId) return;
+    const expenseId = editingId;
+    if (!expenseId) return;
+
     const shouldDelete = window.confirm("確定要刪除這筆支出嗎？");
     if (!shouldDelete) return;
 
     setAccounting((state) => ({
       ...state,
-      expenses: state.expenses.filter((expense) => expense.id !== editingId),
+      expenses: state.expenses.filter((expense) => expense.id !== expenseId),
     }));
     resetForm();
   }
@@ -493,7 +563,11 @@ export default function AccountingClient({ initialRate }: AccountingClientProps)
           ) : (
             filteredExpenses.map((expense) => {
               const krwAmount = toKrw(expense);
-              const taxHint = taxHintForKrw(krwAmount, expense.taxStatus);
+              const taxHint = taxHintForKrw(
+                krwAmount,
+                expense.taxStatus,
+                expense.rateKrwPerTwd || rateKrwPerTwd,
+              );
 
               return (
                 <button
@@ -525,6 +599,11 @@ export default function AccountingClient({ initialRate }: AccountingClientProps)
                     {taxHint && (
                       <p className="mt-2 text-xs font-semibold text-neutral-500">
                         {taxHint.detail}
+                      </p>
+                    )}
+                    {taxHint?.strategy && (
+                      <p className="mt-1 text-xs font-bold text-orange-700">
+                        {taxHint.strategy}
                       </p>
                     )}
                   </div>
@@ -687,7 +766,10 @@ export default function AccountingClient({ initialRate }: AccountingClientProps)
                   <span>{formatKrw(previewKrw)}</span>
                 </div>
                 {previewTaxHint && (
-                  <p className="mt-2 text-orange-700">{previewTaxHint.detail}</p>
+                  <div className="mt-2 text-orange-700">
+                    <p>{previewTaxHint.detail}</p>
+                    {previewTaxHint.strategy && <p>{previewTaxHint.strategy}</p>}
+                  </div>
                 )}
               </div>
             )}
@@ -702,6 +784,7 @@ export default function AccountingClient({ initialRate }: AccountingClientProps)
 
               {editingId && (
                 <button
+                  formNoValidate
                   className="h-12 rounded-2xl border border-red-100 bg-red-50 text-sm font-bold text-red-600"
                   onClick={deleteExpense}
                   type="button"

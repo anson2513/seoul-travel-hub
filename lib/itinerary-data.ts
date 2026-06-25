@@ -40,7 +40,9 @@ export const itineraryStorageKey = "seoul-travel-hub-itinerary-v2";
 const hotelRoomImage =
   "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=900&auto=format&fit=crop";
 const airportRailroadImage =
-  "https://images.unsplash.com/photo-1544617504-39c484d6c2c3?q=80&w=900&auto=format&fit=crop";
+  "https://commons.wikimedia.org/wiki/Special:Redirect/file/AREX%20Seoul%20Station%20Platform.jpg?width=900";
+const kaohsiungAirportImage =
+  "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=900&auto=format&fit=crop";
 
 export const categoryLabels: Record<ItineraryCategory, string> = {
   flight: "航班",
@@ -75,8 +77,7 @@ export const defaultItineraryDays: ItineraryDay[] = [
         note: "Tigerair Taiwan IT662",
         details: ["15:55 起飛", "目的地為金浦機場 GMP", "出發前先確認護照與登機資訊"],
         tips: ["航班日前一天先完成線上報到。", "登機證、護照、韓國入境資料放在同一個收納夾。"],
-        image:
-          "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=900&auto=format&fit=crop",
+        image: kaohsiungAirportImage,
       },
       {
         id: "d1-arrive-gmp",
@@ -693,20 +694,20 @@ export const defaultItineraryDays: ItineraryDay[] = [
         note: "Tigerair Taiwan IT662",
         details: ["20:35 金浦機場起飛", "返回高雄"],
         tips: ["登機前確認護照、登機證、手機。"],
-        image:
-          "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=900&auto=format&fit=crop",
+        image: kaohsiungAirportImage,
       },
       {
         id: "d6-arrive-khh",
         startTime: "22:00",
-        title: "抵達高雄",
+        title: "抵達小港機場",
         category: "flight",
         location: "高雄國際機場",
         address: "高雄國際機場",
         naverQuery: "高雄國際機場",
         note: "結束首爾自由行",
-        details: ["22:00 左右抵達高雄", "領行李與返家"],
+        details: ["22:00 左右抵達小港機場", "領行李與返家"],
         tips: ["回家後再整理照片，不要在機場趕著處理。"],
+        image: kaohsiungAirportImage,
       },
     ],
   },

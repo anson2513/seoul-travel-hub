@@ -80,7 +80,9 @@ const emptyForm: ItineraryFormState = {
 const maxImageSide = 1200;
 const imageQuality = 0.82;
 const airportRailroadImage =
-  "https://images.unsplash.com/photo-1544617504-39c484d6c2c3?q=80&w=900&auto=format&fit=crop";
+  "https://commons.wikimedia.org/wiki/Special:Redirect/file/AREX%20Seoul%20Station%20Platform.jpg?width=900";
+const kaohsiungAirportImage =
+  "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=900&auto=format&fit=crop";
 
 function applyItineraryMigrations(days: ItineraryDay[]) {
   return days.map((day) => ({
@@ -103,6 +105,15 @@ function applyItineraryMigrations(days: ItineraryDay[]) {
         return {
           ...item,
           image: airportRailroadImage,
+        };
+      }
+
+      if (item.id === "d6-arrive-khh") {
+        return {
+          ...item,
+          title: "抵達小港機場",
+          details: ["22:00 左右抵達小港機場", "領行李與返家"],
+          image: kaohsiungAirportImage,
         };
       }
 
