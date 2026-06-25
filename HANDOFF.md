@@ -138,6 +138,18 @@ Placement note:
 
 Important: User asked to preview the concept image first before implementing it in the public site.
 
+Home PC update:
+
+- A black/gold app icon concept preview was generated on 2026-06-25 at home.
+- The preview image has been copied into the repo at:
+
+```text
+public/design-previews/app-icon-concept-black-gold.png
+```
+
+- User said they also like this concept.
+- Next Codex session can use this image as the reference candidate for the actual app icon and splash screen implementation.
+
 ## Future Work
 
 After the whole app is finalized, create a roughly 1-minute vertical mobile demo video using real app screen recording, not fake/generated UI.
