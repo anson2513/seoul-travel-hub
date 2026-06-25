@@ -3,12 +3,12 @@
 import {
   ArrowDown,
   ArrowUp,
+  ArrowUpDown,
   CalendarDays,
   Clock,
   Copy,
   Edit3,
   ExternalLink,
-  Hand,
   Lightbulb,
   MapPin,
   Navigation,
@@ -16,7 +16,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import BottomNav from "@/components/dashboard/BottomNav";
 import {
   categoryLabels,
@@ -156,12 +156,10 @@ export default function ItineraryClient() {
   const [activeDayId, setActiveDayId] = useState(defaultItineraryDays[0].id);
   const [selectedItem, setSelectedItem] = useState<ItineraryItem | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [showHint, setShowHint] = useState(true);
   const [formItemId, setFormItemId] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formState, setFormState] = useState<ItineraryFormState>(emptyForm);
   const [hasHydrated, setHasHydrated] = useState(false);
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const activeDay = days.find((day) => day.id === activeDayId) ?? days[0];
 
@@ -176,19 +174,6 @@ export default function ItineraryClient() {
     if (!hasHydrated) return;
     window.localStorage.setItem(itineraryStorageKey, JSON.stringify(days));
   }, [days, hasHydrated]);
-
-  function clearLongPress() {
-    if (!longPressTimer.current) return;
-    clearTimeout(longPressTimer.current);
-    longPressTimer.current = null;
-  }
-
-  function startLongPress() {
-    clearLongPress();
-    longPressTimer.current = setTimeout(() => {
-      setIsEditMode(true);
-    }, 520);
-  }
 
   function moveItem(itemId: string, direction: "up" | "down") {
     setDays((currentDays) =>
@@ -343,55 +328,35 @@ export default function ItineraryClient() {
           })}
         </div>
 
-        <section className="mt-6 rounded-[26px] border border-neutral-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <CalendarDays size={22} />
-              <div>
-                <p className="text-base font-bold text-neutral-950">
-                  {activeDay.date}
-                </p>
-                <p className="text-sm font-semibold text-neutral-500">
-                  {activeDay.label.replace("DAY ", "Day ")} · {activeDay.title}
-                </p>
-              </div>
-            </div>
-            <span className="text-sm font-bold text-neutral-500">
-              {activeDay.area}
-            </span>
-          </div>
-        </section>
-
-        {showHint && (
-          <section className="mt-4 rounded-[22px] border border-orange-100 bg-white/80 p-4 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <Hand size={26} />
-                <div>
-                  <p className="text-base font-bold text-neutral-950">
-                    長按進入排序模式
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-neutral-500">
-                    可用上移 / 下移調整行程順序
-                  </p>
-                </div>
-              </div>
-
-              <button
-                aria-label="關閉提示"
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-neutral-700"
-                onClick={() => setShowHint(false)}
-                type="button"
+        <button
+          className={`mt-6 w-full rounded-[22px] border p-4 text-left shadow-sm transition ${
+            isEditMode
+              ? "border-neutral-950 bg-neutral-950 text-white"
+              : "border-neutral-200 bg-white/80 text-neutral-950"
+          }`}
+          onClick={() => setIsEditMode(true)}
+          type="button"
+        >
+          <div className="flex items-center gap-3">
+            <ArrowUpDown size={26} />
+            <div>
+              <p className="text-base font-bold">調整行程順序</p>
+              <p
+                className={`mt-1 text-sm font-semibold ${
+                  isEditMode ? "text-white/65" : "text-neutral-500"
+                }`}
               >
-                <X size={23} />
-              </button>
+                {isEditMode
+                  ? "使用上移 / 下移後按完成"
+                  : "點一下後可用上移 / 下移排序"}
+              </p>
             </div>
-          </section>
-        )}
+          </div>
+        </button>
 
         {isEditMode && (
           <div className="mt-4 flex items-center justify-between rounded-2xl bg-neutral-950 px-4 py-3 text-white">
-            <span className="text-sm font-bold">排序模式</span>
+            <span className="text-sm font-bold">正在調整順序</span>
             <button
               className="rounded-full bg-white/15 px-3 py-1 text-sm font-bold"
               onClick={() => setIsEditMode(false)}
@@ -406,12 +371,8 @@ export default function ItineraryClient() {
           {activeDay.items.map((item, index) => (
             <article
               key={item.id}
-              className="grid grid-cols-[72px_1fr] border-b border-neutral-100 last:border-b-0"
+              className="grid select-none grid-cols-[72px_1fr] border-b border-neutral-100 last:border-b-0"
               onContextMenu={(event) => event.preventDefault()}
-              onPointerCancel={clearLongPress}
-              onPointerDown={startLongPress}
-              onPointerLeave={clearLongPress}
-              onPointerUp={clearLongPress}
             >
               <button
                 className="border-r border-neutral-100 px-3 py-5 text-left"
