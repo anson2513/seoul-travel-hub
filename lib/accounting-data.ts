@@ -29,15 +29,66 @@ export type AccountingState = {
   expenses: ExpenseEntry[];
 };
 
-export const accountingStorageKey = "seoul-travel-hub-accounting-v1";
+export const accountingStorageKey = "seoul-travel-hub-accounting-v2";
 export const defaultBudgetTwd = 50000;
 export const fallbackKrwPerTwd = 42.5;
 export const taxFreeThresholdKrw = 15000;
 export const taxFreeNearThresholdKrw = 14000;
 
+export const defaultSampleExpenses: ExpenseEntry[] = [
+  {
+    id: "sample-starbucks",
+    title: "星巴克咖啡",
+    date: "2026-10-10",
+    category: "cafe",
+    paymentMethod: "cash",
+    taxStatus: "none",
+    currency: "KRW",
+    amount: 7000,
+    rateKrwPerTwd: fallbackKrwPerTwd,
+    createdAt: "2026-10-10T09:00:00.000Z",
+  },
+  {
+    id: "sample-olive-young",
+    title: "OLIVE YOUNG 購物",
+    date: "2026-10-10",
+    category: "shopping",
+    paymentMethod: "card",
+    taxStatus: "pending",
+    currency: "KRW",
+    amount: 54000,
+    rateKrwPerTwd: fallbackKrwPerTwd,
+    createdAt: "2026-10-10T10:00:00.000Z",
+  },
+  {
+    id: "sample-taxi",
+    title: "計程車車資",
+    date: "2026-10-10",
+    category: "transport",
+    paymentMethod: "cash",
+    taxStatus: "none",
+    currency: "KRW",
+    amount: 13500,
+    rateKrwPerTwd: fallbackKrwPerTwd,
+    createdAt: "2026-10-10T11:00:00.000Z",
+  },
+  {
+    id: "sample-myeongdong-dumplings",
+    title: "明洞餃子",
+    date: "2026-10-10",
+    category: "food",
+    paymentMethod: "cash",
+    taxStatus: "none",
+    currency: "KRW",
+    amount: 10500,
+    rateKrwPerTwd: fallbackKrwPerTwd,
+    createdAt: "2026-10-10T12:00:00.000Z",
+  },
+];
+
 export const defaultAccountingState: AccountingState = {
   budgetTwd: defaultBudgetTwd,
-  expenses: [],
+  expenses: defaultSampleExpenses,
 };
 
 export const expenseCategoryLabels: Record<ExpenseCategory, string> = {

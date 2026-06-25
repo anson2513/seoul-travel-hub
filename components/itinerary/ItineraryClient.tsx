@@ -79,20 +79,53 @@ const emptyForm: ItineraryFormState = {
 
 const maxImageSide = 1200;
 const imageQuality = 0.82;
+const airportRailroadImage =
+  "https://images.unsplash.com/photo-1544617504-39c484d6c2c3?q=80&w=900&auto=format&fit=crop";
+
+function applyItineraryMigrations(days: ItineraryDay[]) {
+  return days.map((day) => ({
+    ...day,
+    items: day.items.map((item) => {
+      if (item.id === "d1-arex-hongdae") {
+        return {
+          ...item,
+          title: "前往飯店",
+          details: [
+            "搭乘機場鐵道 AREX",
+            "從金浦機場前往弘大入口站",
+            "抵達後先前往飯店",
+          ],
+          image: airportRailroadImage,
+        };
+      }
+
+      if (item.id === "d6-gmp-transit") {
+        return {
+          ...item,
+          image: airportRailroadImage,
+        };
+      }
+
+      return item;
+    }),
+  }));
+}
 
 function readStoredDays() {
-  if (typeof window === "undefined") return defaultItineraryDays;
+  if (typeof window === "undefined") {
+    return applyItineraryMigrations(defaultItineraryDays);
+  }
 
   try {
     const raw = window.localStorage.getItem(itineraryStorageKey);
-    if (!raw) return defaultItineraryDays;
+    if (!raw) return applyItineraryMigrations(defaultItineraryDays);
 
     const parsed = JSON.parse(raw) as ItineraryDay[];
     return Array.isArray(parsed) && parsed.length > 0
-      ? parsed
-      : defaultItineraryDays;
+      ? applyItineraryMigrations(parsed)
+      : applyItineraryMigrations(defaultItineraryDays);
   } catch {
-    return defaultItineraryDays;
+    return applyItineraryMigrations(defaultItineraryDays);
   }
 }
 

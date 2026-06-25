@@ -34,6 +34,8 @@ type ExpenseFormState = {
   amount: string;
 };
 
+type TaxFilter = "all" | "unrefunded";
+
 const emptyExpenseForm: ExpenseFormState = {
   title: "",
   date: "2026-10-10",
@@ -105,6 +107,10 @@ function expenseToForm(expense: ExpenseEntry): ExpenseFormState {
   };
 }
 
+function isUnrefundedTaxCandidate(expense: ExpenseEntry) {
+  return toKrw(expense) >= taxFreeThresholdKrw && expense.taxStatus !== "refunded";
+}
+
 function toTwd(expense: ExpenseEntry) {
   if (expense.currency === "TWD") return expense.amount;
   return expense.amount / expense.rateKrwPerTwd;
@@ -147,6 +153,7 @@ export default function AccountingClient({ initialRate }: AccountingClientProps)
   const rateKrwPerTwd = initialRate ?? fallbackKrwPerTwd;
   const [accounting, setAccounting] = useState(defaultAccountingState);
   const [activeDate, setActiveDate] = useState("all");
+  const [taxFilter, setTaxFilter] = useState<TaxFilter>("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formState, setFormState] = useState(emptyExpenseForm);
   const [isBudgetEditing, setIsBudgetEditing] = useState(false);
@@ -173,16 +180,20 @@ export default function AccountingClient({ initialRate }: AccountingClientProps)
   }, [accounting, hasHydrated]);
 
   const filteredExpenses = useMemo(() => {
-    const expenses =
+    const dateFiltered =
       activeDate === "all"
         ? accounting.expenses
         : accounting.expenses.filter((expense) => expense.date === activeDate);
+    const expenses =
+      taxFilter === "unrefunded"
+        ? dateFiltered.filter(isUnrefundedTaxCandidate)
+        : dateFiltered;
 
     return [...expenses].sort((a, b) => {
       if (a.date !== b.date) return b.date.localeCompare(a.date);
       return b.createdAt.localeCompare(a.createdAt);
     });
-  }, [accounting.expenses, activeDate]);
+  }, [accounting.expenses, activeDate, taxFilter]);
 
   const totalTwd = useMemo(
     () => accounting.expenses.reduce((sum, expense) => sum + toTwd(expense), 0),
@@ -205,6 +216,15 @@ export default function AccountingClient({ initialRate }: AccountingClientProps)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3);
   }, [accounting.expenses]);
+
+  const unrefundedExpenses = useMemo(
+    () => accounting.expenses.filter(isUnrefundedTaxCandidate),
+    [accounting.expenses],
+  );
+  const unrefundedKrwTotal = useMemo(
+    () => unrefundedExpenses.reduce((sum, expense) => sum + toKrw(expense), 0),
+    [unrefundedExpenses],
+  );
 
   const previewAmount = parseAmount(formState.amount);
   const previewKrw =
@@ -251,7 +271,11 @@ export default function AccountingClient({ initialRate }: AccountingClientProps)
     const nextExpense: ExpenseEntry = {
       id: editingId ?? `expense-${Date.now()}`,
       title: formState.title.trim() || "未命名支出",
-      date: formState.date,
+      date: editingId
+        ? formState.date
+        : activeDate === "all"
+          ? emptyExpenseForm.date
+          : activeDate,
       category: formState.category,
       paymentMethod: formState.paymentMethod,
       taxStatus: formState.taxStatus,
@@ -375,23 +399,31 @@ export default function AccountingClient({ initialRate }: AccountingClientProps)
           </p>
         </section>
 
-        {categoryTotals.length > 0 && (
-          <section className="mt-4 grid grid-cols-3 gap-2">
-            {categoryTotals.map(([category, amount]) => (
-              <div
-                className="rounded-2xl border border-neutral-200 bg-white p-3 text-center shadow-sm"
-                key={category}
-              >
-                <p className="text-xs font-bold text-neutral-500">
-                  {expenseCategoryLabels[category]}
-                </p>
-                <p className="mt-1 text-sm font-bold text-neutral-950">
-                  {formatTwd(amount)}
-                </p>
-              </div>
-            ))}
-          </section>
-        )}
+        <section className="mt-4 rounded-[22px] border border-neutral-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-base font-bold text-neutral-950">類別統計</h2>
+            <span className="text-xs font-bold text-neutral-400">TOP 3</span>
+          </div>
+
+          {categoryTotals.length > 0 ? (
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {categoryTotals.map(([category, amount]) => (
+                <div className="rounded-2xl bg-neutral-50 p-3 text-center" key={category}>
+                  <p className="text-xs font-bold text-neutral-500">
+                    {expenseCategoryLabels[category]}
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-neutral-950">
+                    {formatTwd(amount)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 rounded-2xl bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-500">
+              新增支出後會顯示花費最高的類別。
+            </p>
+          )}
+        </section>
 
         <div className="no-scrollbar mt-6 flex gap-3 overflow-x-auto pb-2">
           {accountingDays.map((day) => {
@@ -414,12 +446,48 @@ export default function AccountingClient({ initialRate }: AccountingClientProps)
           })}
         </div>
 
+        <section className="mt-2 grid grid-cols-2 gap-3">
+          <button
+            className={`rounded-2xl border px-4 py-3 text-sm font-bold shadow-sm ${
+              taxFilter === "all"
+                ? "border-neutral-950 bg-neutral-950 text-white"
+                : "border-neutral-200 bg-white text-neutral-600"
+            }`}
+            onClick={() => setTaxFilter("all")}
+            type="button"
+          >
+            全部消費
+          </button>
+          <button
+            className={`rounded-2xl border px-4 py-3 text-sm font-bold shadow-sm ${
+              taxFilter === "unrefunded"
+                ? "border-orange-600 bg-orange-50 text-orange-700"
+                : "border-neutral-200 bg-white text-neutral-600"
+            }`}
+            onClick={() => setTaxFilter("unrefunded")}
+            type="button"
+          >
+            未退稅 {unrefundedExpenses.length}
+          </button>
+        </section>
+
+        {taxFilter === "unrefunded" && (
+          <section className="mt-3 rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-800">
+            待退稅 {unrefundedExpenses.length} 筆，合計{" "}
+            {formatKrw(unrefundedKrwTotal, false)}
+          </section>
+        )}
+
         <section className="mt-3 overflow-hidden rounded-[24px] border border-neutral-200 bg-white shadow-sm">
           {filteredExpenses.length === 0 ? (
             <div className="px-5 py-10 text-center">
-              <p className="text-lg font-bold text-neutral-950">尚未新增支出</p>
+              <p className="text-lg font-bold text-neutral-950">
+                {taxFilter === "unrefunded" ? "目前沒有待退稅消費" : "尚未新增支出"}
+              </p>
               <p className="mt-2 text-sm font-semibold text-neutral-500">
-                旅行中可以在下方直接新增餐飲、交通、購物等消費。
+                {taxFilter === "unrefunded"
+                  ? "滿 ₩15,000 且尚未完成退稅的消費會集中顯示在這裡。"
+                  : "旅行中可以在下方直接新增餐飲、交通、購物等消費。"}
               </p>
             </div>
           ) : (
@@ -506,22 +574,6 @@ export default function AccountingClient({ initialRate }: AccountingClientProps)
               value={formState.title}
             />
 
-            <select
-              className="h-12 w-full rounded-xl border border-neutral-200 px-4 text-base font-semibold outline-none focus:border-neutral-950"
-              onChange={(event) =>
-                setFormState((state) => ({ ...state, date: event.target.value }))
-              }
-              value={formState.date}
-            >
-              {accountingDays
-                .filter((day) => day.id !== "all")
-                .map((day) => (
-                  <option key={day.id} value={day.id}>
-                    {day.label} · {day.date}
-                  </option>
-                ))}
-            </select>
-
             <div className="grid grid-cols-2 gap-3">
               <select
                 className="h-12 rounded-xl border border-neutral-200 px-4 text-base font-semibold outline-none focus:border-neutral-950"
@@ -558,30 +610,39 @@ export default function AccountingClient({ initialRate }: AccountingClientProps)
               </select>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 rounded-2xl border border-neutral-200 p-1">
-              {Object.entries(taxStatusLabels).map(([value, label]) => {
-                const isActive = formState.taxStatus === value;
+            <div className="rounded-2xl border border-neutral-200 p-3">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-sm font-bold text-neutral-950">退稅狀態</p>
+                <p className="text-xs font-semibold text-neutral-500">
+                  滿 ₩15,000 可退稅
+                </p>
+              </div>
 
-                return (
-                  <button
-                    className={`h-11 rounded-xl text-sm font-bold transition ${
-                      isActive
-                        ? "bg-neutral-950 text-white"
-                        : "bg-white text-neutral-600"
-                    }`}
-                    key={value}
-                    onClick={() =>
-                      setFormState((state) => ({
-                        ...state,
-                        taxStatus: value as TaxStatus,
-                      }))
-                    }
-                    type="button"
-                  >
-                    {label}
-                  </button>
-                );
-              })}
+              <div className="grid grid-cols-3 gap-2">
+                {Object.entries(taxStatusLabels).map(([value, label]) => {
+                  const isActive = formState.taxStatus === value;
+
+                  return (
+                    <button
+                      className={`h-11 rounded-xl text-sm font-bold transition ${
+                        isActive
+                          ? "bg-neutral-950 text-white"
+                          : "bg-neutral-50 text-neutral-600"
+                      }`}
+                      key={value}
+                      onClick={() =>
+                        setFormState((state) => ({
+                          ...state,
+                          taxStatus: value as TaxStatus,
+                        }))
+                      }
+                      type="button"
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="grid grid-cols-[128px_1fr] gap-3">
