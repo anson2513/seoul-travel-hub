@@ -150,6 +150,27 @@ public/design-previews/app-icon-concept-black-gold.png
 - User said they also like this concept.
 - Next Codex session can use this image as the reference candidate for the actual app icon and splash screen implementation.
 
+Splash screen final preview:
+
+- User finalized the splash screen preview on 2026-06-25.
+- Use this file as the approved visual reference:
+
+```text
+public/design-previews/splash-screen-final.png
+```
+
+- Keep the icon and text group around 42% viewport height.
+- Use real rendered text in the implementation:
+
+```text
+SEOUL Travel Hub
+開發者 by ANSON
+```
+
+- Show the splash screen for about 1.5 seconds before entering the Home dashboard.
+- The lower line art should be based on the actual Home hero image: cherry blossom branches, N Seoul Tower, sunset mood, Han River bridge, and city skyline.
+- Do not add the previous large pale-gold glow behind the app icon.
+
 ## Future Work
 
 After the whole app is finalized, create a roughly 1-minute vertical mobile demo video using real app screen recording, not fake/generated UI.
