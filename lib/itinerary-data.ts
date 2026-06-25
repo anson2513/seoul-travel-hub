@@ -39,6 +39,8 @@ export const itineraryStorageKey = "seoul-travel-hub-itinerary-v2";
 
 const hotelRoomImage =
   "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=900&auto=format&fit=crop";
+const airportRailroadImage =
+  "https://images.unsplash.com/photo-1544617504-39c484d6c2c3?q=80&w=900&auto=format&fit=crop";
 
 export const categoryLabels: Record<ItineraryCategory, string> = {
   flight: "航班",
@@ -94,16 +96,15 @@ export const defaultItineraryDays: ItineraryDay[] = [
         id: "d1-arex-hongdae",
         startTime: "20:15",
         endTime: "21:00",
-        title: "前往弘大",
+        title: "前往飯店",
         category: "transit",
         location: "機場鐵道 AREX",
         address: "홍대입구역",
         naverQuery: "홍대입구역",
         note: "抵達弘大入口站",
-        details: ["搭乘機場鐵道 AREX", "從金浦機場前往弘大入口站", "抵達後先前往住宿"],
+        details: ["搭乘機場鐵道 AREX", "從金浦機場前往弘大入口站", "抵達後先前往飯店"],
         tips: ["晚間拖行李移動，路線以電梯出口優先。", "先截圖住宿地址，避免網路不穩。"],
-        image:
-          "https://images.unsplash.com/photo-1544617504-39c484d6c2c3?q=80&w=900&auto=format&fit=crop",
+        image: airportRailroadImage,
       },
       {
         id: "d1-check-in",
@@ -665,6 +666,7 @@ export const defaultItineraryDays: ItineraryDay[] = [
         note: "從弘大前往金浦機場",
         details: ["16:00 出發前往金浦機場", "預留搭車與機場作業時間"],
         tips: ["回程不要壓太晚，寧可早到機場。"],
+        image: airportRailroadImage,
       },
       {
         id: "d6-arrive-gmp",
