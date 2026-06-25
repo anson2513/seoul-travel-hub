@@ -171,6 +171,26 @@ SEOUL Travel Hub
 - The lower line art should be based on the actual Home hero image: cherry blossom branches, N Seoul Tower, sunset mood, Han River bridge, and city skyline.
 - Do not add the previous large pale-gold glow behind the app icon.
 
+Implementation update:
+
+- Splash screen has been implemented in:
+
+```text
+components/splash/SplashScreen.tsx
+app/layout.tsx
+```
+
+- Production assets are in:
+
+```text
+public/images/app-icon-black-gold.png
+public/images/splash-hero-line-art.png
+app/icon.png
+app/apple-icon.png
+```
+
+- Build passes after implementation.
+
 ## Future Work
 
 After the whole app is finalized, create a roughly 1-minute vertical mobile demo video using real app screen recording, not fake/generated UI.
