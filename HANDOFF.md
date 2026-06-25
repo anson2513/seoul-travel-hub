@@ -1,11 +1,23 @@
 # SEOUL Travel Hub Handoff
 
-Date: 2026-06-24
-Status: V1.5 Home Dashboard shipped to GitHub and Vercel
+Date: 2026-06-25
+Status: Home, Itinerary, Accounting, and Photo Map are pushed to GitHub/Vercel.
 
-## Project Location
+## Repository
 
-The GitHub repo `anson2513/seoul-travel-hub` has been cloned into:
+GitHub:
+
+```text
+anson2513/seoul-travel-hub
+```
+
+Production:
+
+```text
+https://seoul-travel-hub.vercel.app/
+```
+
+Local workspace used at office:
 
 ```text
 C:\Users\Anson\Documents\韓國自由行
@@ -13,126 +25,157 @@ C:\Users\Anson\Documents\韓國自由行
 
 ## Product Direction
 
-Build toward the approved mobile-first mockups:
-
-- Home Dashboard
-- Itinerary
-- Expense Tracker
-- Photo Map
-
-Use the finalized handoff document as the source of truth for real data.
-
-Priority remains V1.5 Home Dashboard first. Do not start Accounting or Photo Map yet.
-
-## Completed This Session
-
-- Rebuilt broken Chinese text in the Home Dashboard components.
-- Reworked `Hero` to match the approved Seoul 2026 app-style direction.
-- Rebuilt `TravelInfoCard` as one combined card:
-  - Flight
-  - Seoul weather
-  - KRW/TWD exchange rate
-- Added real fixed trip data in `lib/travel-data.ts`.
-- Added live data fetching in `lib/live-info.ts`.
-- Updated emergency contacts into real phone links:
-  - `tel:119`
-  - `tel:1330`
-  - `tel:+8227381038`
-- Reworked `TodaySchedule` with valid Chinese copy and remote images only.
-- Reworked `BottomNav` labels and mobile touch sizing.
-- Updated metadata to `SEOUL Travel Hub`.
-- Removed `next/font/google` so builds do not depend on Google Fonts availability.
-- Prevented dark mode from changing the intended light app UI.
-
-## Real Data Currently Used
-
-Outbound flight:
+SEOUL Travel Hub is a mobile-first personal travel companion for the Seoul trip:
 
 ```text
-Tigerair Taiwan IT662
-2026-10-10
-KHH -> GMP
-15:55 -> 19:45
+2026-10-10 to 2026-10-15
+Hongdae base
 ```
 
-Return flight is recorded in data but not displayed on Home yet:
+It is not a blog or generic travel website. It is intended to be used on the phone during the actual trip.
+
+Core principles:
+
+- Real trip data over demo content.
+- Mobile-first layout.
+- Local device data for user edits.
+- No account system or shared syncing for V1.
+- Keep the app smooth and practical.
+
+## Current Feature Status
+
+### Home
+
+Completed and deployed.
+
+- Seoul hero image and clean app-style dashboard.
+- Flight card supports outbound/return flight switching.
+- Weather can be refreshed manually.
+- Exchange rate can be refreshed manually.
+- Exchange display is TWD-first.
+- Emergency contacts use real phone links.
+- Bottom navigation is active.
+
+### Itinerary
+
+Completed and deployed as V1.
+
+- Day 1 to Day 6 trip data is loaded.
+- User can add/edit/delete itinerary items.
+- User can upload itinerary photos.
+- Uploaded photos fit the card image area without distortion.
+- Time input auto-formats values like `2230` into `22:30`.
+- Sort mode is button-based, not long-press based.
+- NAVER Map navigation is used for itinerary navigation.
+- Detail panel includes notes, tips, NAVER navigation, and copy address.
+
+Important data fixes already applied:
+
+- DAY1 third item changed to `前往飯店`.
+- DAY1 third item has an AREX image.
+- DAY6 fifth item has an AREX image.
+- DAY6 final arrival item says `抵達小港機場` and uses the airport image.
+
+### Accounting
+
+Completed and deployed as V1.
+
+- Local-device expense records.
+- Add/edit/delete expense records.
+- TWD and KRW display together.
+- Default sample expenses are included for future demo video use.
+- Budget and total spend summary.
+- Category summary.
+- Untaxed/refund-needed list.
+- Korea tax refund reminder for KRW 15,000+ purchases.
+- Estimated tax refund amount is displayed.
+- Tier-based reminder suggests when a purchase is close to a better refund threshold.
+
+### Photo Map
+
+Completed and deployed as V1.1.
+
+- 15 planned photo spots are loaded.
+- User can add/edit photo spots.
+- User can upload a preset reference image for each spot.
+- Spot images now use a compact itinerary-like card layout and do not stretch vertically.
+- Tapping a spot opens a full detail panel.
+- Detail panel includes large image, NAVER navigation, copy address, completion toggle, notes, tips, and edit action.
+- Completion status is stored locally.
+- Top route icon opens a lightweight route panel, not a heavy map.
+- `推薦拍攝` is visible before the trip and recommends autumn/golden-hour spots.
+- During the trip, recommendation logic can highlight time-relevant spots.
+
+## Next Planned Work
+
+### Splash Screen and Home Screen Icon
+
+User selected the iPhone home-screen short name:
 
 ```text
-Tigerair Taiwan IT662
-2026-10-15
-GMP -> KHH
-20:35 -> 22:40
+韓旅 Hub
 ```
 
-## Live Data Behavior
+Approved visual direction:
 
-Weather:
-
-- Uses `OPENWEATHER_API_KEY` when available.
-- Falls back to Open-Meteo if no OpenWeather key is configured.
-- Displays Seoul temperature, feels-like temperature, rain chance, weather text, icon, and update time.
-
-Exchange:
-
-- Uses `https://open.er-api.com/v6/latest/KRW`.
-- Displays `1 KRW = TWD`.
-
-## Verification Done
-
-These passed:
+- Premium black/gold style.
+- Custom rounded-square app icon.
+- Icon concept: Seoul N Tower + map pin + route line + subtle 2026.
+- Keep icon clean enough to read at iPhone home-screen size.
+- Splash screen text should be minimal:
 
 ```text
-npm.cmd run lint
-npm.cmd run build
+SEOUL Travel Hub
+開發者 by ANSON
 ```
 
-The first build failed because Google Fonts could not be fetched. That was fixed by removing `next/font/google`.
+Placement note:
 
-Mobile verification:
+- Keep the icon and text group slightly above exact center.
+- Recommended visual position is around 42% of viewport height.
+- Leave quiet negative space below.
+- Do not add extra slogans.
 
-- Checked at mobile widths around 375px and 415px.
-- No horizontal overflow.
-- Hero, IT662 flight data, weather section, KRW/TWD exchange section, schedule preview, emergency links, and bottom nav render correctly.
-- `tel:119`, `tel:1330`, and `tel:+8227381038` are present.
+Important: User asked to preview the concept image first before implementing it in the public site.
 
-Deployment:
+## Future Work
 
-- Commit pushed to GitHub: `f6c842e Build V1.5 home dashboard`
-- Vercel production URL checked and returned 200:
+After the whole app is finalized, create a roughly 1-minute vertical mobile demo video using real app screen recording, not fake/generated UI.
+
+The demo should highlight:
+
+- Home dashboard.
+- Itinerary editing/navigation.
+- Accounting with tax refund reminders.
+- Photo Map and recommendation flow.
+
+Preferred format:
 
 ```text
-https://seoul-travel-hub.vercel.app/
+1080x1920 vertical
 ```
 
-- Production HTML includes the updated title, Hero, IT662 flight data, weather labels, exchange labels, and emergency phone links.
+## Development Notes
 
-## Next Steps
+Commands:
 
-1. Open production site on mobile:
+```powershell
+npm install
+npm run dev
+npm run lint
+npm run build
+```
+
+Local dev URL:
 
 ```text
-https://seoul-travel-hub.vercel.app/
+http://localhost:3000
 ```
 
-2. Visually compare Home against the approved mockup:
+Before coding with this Next.js version, read relevant files under:
 
-- Hero height and text placement
-- TravelInfoCard three-section layout
-- TodaySchedule spacing and thumbnail balance
-- EmergencyCard mobile spacing
-- BottomNav spacing
+```text
+node_modules\next\dist\docs\
+```
 
-3. If Home is accepted, start Itinerary Page:
-
-- Day 1 to Day 5 tabs
-- Timeline sorted by time
-- Add itinerary form
-- Mobile photo upload from gallery
-- Drag sorting later in the iteration
-
-## Notes For Next Session
-
-- Continue from Home Dashboard polish before starting Itinerary.
-- Use the approved mockup screenshots as visual direction.
-- Do not add attraction/cafe/restaurant photos to `public/images`.
-- Future user-uploaded photos should eventually move to Supabase Storage.
+This is required by `AGENTS.md`.
