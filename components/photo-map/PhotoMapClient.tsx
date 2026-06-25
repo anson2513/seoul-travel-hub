@@ -635,17 +635,20 @@ export default function PhotoMapClient() {
                     onClick={() => setSelectedSpotId(spot.id)}
                     type="button"
                   >
-                    <div className="relative aspect-square overflow-hidden rounded-2xl bg-neutral-100">
-                      {spot.image ? (
-                        <div
-                          className="absolute inset-0 bg-cover bg-center"
-                          style={{ backgroundImage: `url(${spot.image})` }}
-                        />
-                      ) : (
-                        <div className="absolute inset-0 bg-gradient-to-br from-stone-200 to-neutral-100" />
-                      )}
-                      <div className="absolute left-2 top-2 flex size-8 items-center justify-center rounded-full bg-white text-sm font-bold text-neutral-950 shadow-sm">
-                        {index + 1}
+                    <div>
+                      <div className="relative aspect-square overflow-hidden rounded-2xl bg-neutral-100">
+                        {spot.image ? (
+                          <div
+                            className="absolute inset-0 bg-cover bg-center"
+                            style={{ backgroundImage: `url(${spot.image})` }}
+                          />
+                        ) : (
+                          <div className="absolute inset-0 bg-gradient-to-br from-stone-200 to-neutral-100" />
+                        )}
+                      </div>
+
+                      <div className="mt-2 text-center text-xs font-bold tracking-normal text-neutral-400">
+                        #{String(index + 1).padStart(2, "0")}
                       </div>
                     </div>
 
