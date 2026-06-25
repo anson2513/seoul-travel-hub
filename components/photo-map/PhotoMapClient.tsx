@@ -1,11 +1,15 @@
 "use client";
 
 import {
+  CalendarDays,
   Camera,
   Check,
   Clock,
+  Copy,
+  ExternalLink,
   Flag,
   ImagePlus,
+  Lightbulb,
   Map,
   MapPin,
   Navigation,
@@ -129,9 +133,8 @@ function sortByDayAndTime(spots: PhotoSpot[]) {
   });
 }
 
-function getTimeBadge(spot: PhotoSpot, routeDate: string): TimeBadge | null {
-  const today = getTodayDate();
-  if (spot.dayDate !== today || routeDate !== today) return null;
+function getTimeBadge(spot: PhotoSpot): TimeBadge | null {
+  if (spot.dayDate !== getTodayDate()) return null;
 
   const now = getCurrentMinutes();
   const start = parseTimeToMinutes(spot.bestStart);
@@ -152,6 +155,19 @@ function getTimeBadge(spot: PhotoSpot, routeDate: string): TimeBadge | null {
   }
 
   return null;
+}
+
+function isGoldenHourSpot(spot: PhotoSpot) {
+  const start = parseTimeToMinutes(spot.bestStart);
+  const text = `${spot.lightType} ${spot.advice}`;
+
+  return (
+    start >= 16 * 60 ||
+    text.includes("夕陽") ||
+    text.includes("藍調") ||
+    text.includes("日落") ||
+    text.includes("夜景")
+  );
 }
 
 function makeNaverSearchUrl(query: string) {
@@ -186,6 +202,15 @@ function openNaverMap(spot: PhotoSpot) {
         "https://apps.apple.com/tw/app/naver-map-navigation/id311867728";
     }
   }, 1200);
+}
+
+function copyAddress(spot: PhotoSpot) {
+  const text = spot.address || spot.naverQuery || spot.title;
+
+  navigator.clipboard
+    ?.writeText(text)
+    .then(() => window.alert("已複製地址"))
+    .catch(() => window.alert(text));
 }
 
 function readFileAsDataUrl(file: File) {
@@ -257,9 +282,26 @@ function spotToForm(spot: PhotoSpot): PhotoSpotFormState {
   };
 }
 
+function tipsForSpot(spot: PhotoSpot) {
+  const tips = [
+    "10 月中旬首爾日落約 18:00，夕陽點建議提早 30-45 分鐘抵達。",
+  ];
+
+  if (spot.lightType.includes("夜") || spot.bestStart >= "18:00") {
+    tips.push("夜景點可先把手機電量與相機防手震設定確認好。");
+  } else if (spot.bestStart < "12:00") {
+    tips.push("上午點建議早點抵達，避開人潮會更容易拍乾淨畫面。");
+  } else {
+    tips.push("下午拍攝注意逆光方向，人物照可找側光或陰影邊緣。");
+  }
+
+  return tips;
+}
+
 export default function PhotoMapClient() {
   const [photoMap, setPhotoMap] = useState(defaultPhotoMapState);
   const [activeStatus, setActiveStatus] = useState<PhotoSpotStatus>("all");
+  const [selectedSpotId, setSelectedSpotId] = useState<string | null>(null);
   const [isRouteOpen, setIsRouteOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSpotId, setEditingSpotId] = useState<string | null>(null);
@@ -284,6 +326,7 @@ export default function PhotoMapClient() {
 
   const routeDate = getRouteDate(photoMap.spots);
   const routeDay = findTripDay(routeDate);
+  const isTripToday = Boolean(findTripDay(getTodayDate()));
   const routeSpots = useMemo(
     () =>
       sortByDayAndTime(photoMap.spots).filter(
@@ -291,11 +334,23 @@ export default function PhotoMapClient() {
       ),
     [photoMap.spots, routeDate],
   );
-  const recommendedSpots = useMemo(
-    () =>
-      routeSpots.filter((spot) => getTimeBadge(spot, routeDate)).slice(0, 3),
-    [routeDate, routeSpots],
-  );
+  const recommendedSpots = useMemo(() => {
+    if (isTripToday) {
+      const liveSpots = sortByDayAndTime(photoMap.spots).filter(
+        (spot) => !spot.completed && getTimeBadge(spot),
+      );
+
+      return liveSpots.length > 0
+        ? liveSpots.slice(0, 4)
+        : routeSpots.slice(0, 4);
+    }
+
+    const goldenHourSpots = sortByDayAndTime(photoMap.spots).filter(
+      (spot) => !spot.completed && isGoldenHourSpot(spot),
+    );
+
+    return goldenHourSpots.slice(0, 4);
+  }, [isTripToday, photoMap.spots, routeSpots]);
 
   const visibleSpots = useMemo(() => {
     const spots = sortByDayAndTime(photoMap.spots);
@@ -305,6 +360,8 @@ export default function PhotoMapClient() {
     return spots;
   }, [activeStatus, photoMap.spots]);
 
+  const selectedSpot =
+    photoMap.spots.find((spot) => spot.id === selectedSpotId) ?? null;
   const completedCount = photoMap.spots.filter((spot) => spot.completed).length;
   const completionRate =
     photoMap.spots.length > 0 ? (completedCount / photoMap.spots.length) * 100 : 0;
@@ -328,6 +385,7 @@ export default function PhotoMapClient() {
   function openEditForm(spot: PhotoSpot) {
     setEditingSpotId(spot.id);
     setFormState(spotToForm(spot));
+    setSelectedSpotId(null);
     setIsFormOpen(true);
   }
 
@@ -354,6 +412,7 @@ export default function PhotoMapClient() {
     }
 
     const day = findTripDay(formState.dayDate) ?? photoTripDays[0];
+    const existingSpot = photoMap.spots.find((spot) => spot.id === editingSpotId);
     const nextSpot: PhotoSpot = {
       id: editingSpotId ?? `photo-${Date.now()}`,
       title: formState.title.trim(),
@@ -371,11 +430,8 @@ export default function PhotoMapClient() {
       advice: formState.advice.trim() || "現場依光線與人潮調整構圖。",
       note: formState.note.trim(),
       image: formState.image || undefined,
-      completed:
-        photoMap.spots.find((spot) => spot.id === editingSpotId)?.completed ?? false,
-      createdAt:
-        photoMap.spots.find((spot) => spot.id === editingSpotId)?.createdAt ??
-        new Date().toISOString(),
+      completed: existingSpot?.completed ?? false,
+      createdAt: existingSpot?.createdAt ?? new Date().toISOString(),
     };
 
     setPhotoMap((state) => {
@@ -502,38 +558,62 @@ export default function PhotoMapClient() {
           </div>
         </section>
 
-        {recommendedSpots.length > 0 && (
-          <section className="mt-5 rounded-[24px] border border-emerald-100 bg-emerald-50 p-4">
-            <div className="flex items-center gap-2">
-              <Clock size={20} className="text-emerald-700" />
-              <h2 className="text-base font-bold text-emerald-900">
-                今日推薦拍攝
+        <section className="mt-5 rounded-[24px] border border-amber-100 bg-amber-50 p-4">
+          <div className="flex items-center gap-2">
+            <Clock size={20} className="text-amber-700" />
+            <div>
+              <h2 className="text-base font-bold text-amber-950">
+                推薦拍攝
               </h2>
+              <p className="mt-0.5 text-xs font-semibold text-amber-800">
+                {isTripToday
+                  ? "依目前時間顯示現在或接下來適合的景點"
+                  : "旅行前先看 10 月中旬夕陽、藍調與夜景重點"}
+              </p>
             </div>
-            <div className="mt-3 grid gap-2">
-              {recommendedSpots.map((spot) => (
-                <button
-                  className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-sm"
-                  key={spot.id}
-                  onClick={() => openNaverMap(spot)}
-                  type="button"
-                >
-                  <div>
-                    <p className="font-bold text-neutral-950">{spot.title}</p>
-                    <p className="mt-1 text-xs font-semibold text-neutral-500">
-                      {spot.bestStart} - {spot.bestEnd} · {spot.lightType}
-                    </p>
-                  </div>
-                  <Navigation size={18} className="text-emerald-700" />
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
+          </div>
+          <div className="mt-3 grid gap-2">
+            {recommendedSpots.length === 0 ? (
+              <p className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-neutral-500">
+                目前沒有符合時間的推薦景點。
+              </p>
+            ) : (
+              recommendedSpots.map((spot) => {
+                const timeBadge = getTimeBadge(spot);
 
-        <section className="mt-5 overflow-hidden rounded-[26px] border border-neutral-200 bg-white shadow-sm">
+                return (
+                  <button
+                    className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-sm"
+                    key={spot.id}
+                    onClick={() => setSelectedSpotId(spot.id)}
+                    type="button"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-bold text-neutral-950">
+                        {spot.title}
+                      </p>
+                      <p className="mt-1 text-xs font-semibold text-neutral-500">
+                        {spot.dayLabel} · {spot.bestStart} - {spot.bestEnd} ·{" "}
+                        {spot.lightType}
+                      </p>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${
+                        timeBadge?.className ?? "bg-amber-100 text-amber-800"
+                      }`}
+                    >
+                      {timeBadge?.label ?? "秋季重點"}
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </section>
+
+        <section className="mt-5 space-y-3">
           {visibleSpots.length === 0 ? (
-            <div className="px-5 py-10 text-center">
+            <div className="rounded-[26px] border border-neutral-200 bg-white px-5 py-10 text-center shadow-sm">
               <p className="text-lg font-bold text-neutral-950">
                 目前沒有景點
               </p>
@@ -543,96 +623,75 @@ export default function PhotoMapClient() {
             </div>
           ) : (
             visibleSpots.map((spot, index) => {
-              const timeBadge = getTimeBadge(spot, routeDate);
+              const timeBadge = getTimeBadge(spot);
 
               return (
                 <article
-                  className="grid grid-cols-[118px_1fr] border-b border-neutral-100 last:border-b-0"
+                  className="rounded-[24px] border border-neutral-200 bg-white p-3 shadow-sm"
                   key={spot.id}
                 >
-                  <div className="relative min-h-[156px] overflow-hidden bg-neutral-100">
-                    {spot.image ? (
-                      <div
-                        className="absolute inset-0 bg-cover bg-center"
-                        style={{ backgroundImage: `url(${spot.image})` }}
-                      />
-                    ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-stone-200 to-neutral-100" />
-                    )}
-                    <div className="absolute left-3 top-3 flex size-9 items-center justify-center rounded-full bg-white text-sm font-bold text-neutral-950 shadow-sm">
-                      {index + 1}
-                    </div>
-                  </div>
-
-                  <div className="min-w-0 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h2 className="text-lg font-bold leading-tight text-neutral-950">
-                          {spot.title}
-                        </h2>
-                        <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-neutral-500">
-                          <MapPin size={14} />
-                          <span className="truncate">
-                            {spot.area} · {spot.address || spot.naverQuery}
-                          </span>
-                        </p>
-                      </div>
-                      <button
-                        aria-label="編輯景點"
-                        className="shrink-0 rounded-full bg-neutral-50 p-2 text-neutral-500"
-                        onClick={() => openEditForm(spot)}
-                        type="button"
-                      >
-                        <Pencil size={16} />
-                      </button>
-                    </div>
-
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      <span className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-bold text-stone-700">
-                        {spot.dayLabel}
-                      </span>
-                      <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-bold text-neutral-600">
-                        {spot.bestStart} - {spot.bestEnd}
-                      </span>
-                      {timeBadge && (
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-xs font-bold ${timeBadge.className}`}
-                        >
-                          {timeBadge.label}
-                        </span>
+                  <button
+                    className="grid w-full grid-cols-[96px_1fr] gap-3 text-left"
+                    onClick={() => setSelectedSpotId(spot.id)}
+                    type="button"
+                  >
+                    <div className="relative aspect-square overflow-hidden rounded-2xl bg-neutral-100">
+                      {spot.image ? (
+                        <div
+                          className="absolute inset-0 bg-cover bg-center"
+                          style={{ backgroundImage: `url(${spot.image})` }}
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-stone-200 to-neutral-100" />
                       )}
+                      <div className="absolute left-2 top-2 flex size-8 items-center justify-center rounded-full bg-white text-sm font-bold text-neutral-950 shadow-sm">
+                        {index + 1}
+                      </div>
                     </div>
 
-                    <p className="mt-3 text-sm font-semibold leading-relaxed text-neutral-700">
-                      {spot.advice}
-                    </p>
-                    <p className="mt-2 text-xs font-semibold text-neutral-500">
-                      {spot.lightType}
-                    </p>
+                    <div className="min-w-0 py-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <h2 className="truncate text-lg font-bold text-neutral-950">
+                            {spot.title}
+                          </h2>
+                          <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-neutral-500">
+                            <MapPin size={14} />
+                            <span className="truncate">{spot.area}</span>
+                          </p>
+                        </div>
+                        <span
+                          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${
+                            spot.completed
+                              ? "bg-neutral-950 text-white"
+                              : "bg-neutral-100 text-neutral-600"
+                          }`}
+                        >
+                          {spot.completed ? "已完成" : "未完成"}
+                        </span>
+                      </div>
 
-                    <div className="mt-4 grid grid-cols-[1fr_44px] gap-2">
-                      <button
-                        className="flex h-11 items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white text-sm font-bold text-neutral-950"
-                        onClick={() => openNaverMap(spot)}
-                        type="button"
-                      >
-                        <Navigation size={16} />
-                        NAVER 導航
-                      </button>
-                      <button
-                        aria-label={spot.completed ? "取消完成" : "標記完成"}
-                        className={`flex h-11 items-center justify-center rounded-xl border text-sm font-bold ${
-                          spot.completed
-                            ? "border-neutral-950 bg-neutral-950 text-white"
-                            : "border-neutral-200 bg-white text-neutral-500"
-                        }`}
-                        onClick={() => toggleCompleted(spot.id)}
-                        type="button"
-                      >
-                        <Check size={18} />
-                      </button>
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        <span className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-bold text-stone-700">
+                          {spot.dayLabel}
+                        </span>
+                        <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-bold text-neutral-600">
+                          {spot.bestStart} - {spot.bestEnd}
+                        </span>
+                        {timeBadge && (
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-xs font-bold ${timeBadge.className}`}
+                          >
+                            {timeBadge.label}
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="mt-3 line-clamp-2 text-sm font-semibold leading-relaxed text-neutral-600">
+                        {spot.advice}
+                      </p>
                     </div>
-                  </div>
+                  </button>
                 </article>
               );
             })
@@ -649,8 +708,156 @@ export default function PhotoMapClient() {
         </button>
       </div>
 
+      {selectedSpot && (
+        <div className="fixed inset-0 z-[60] bg-black/35">
+          <button
+            aria-label="關閉景點資訊"
+            className="absolute inset-0 cursor-default"
+            onClick={() => setSelectedSpotId(null)}
+            type="button"
+          />
+          <section className="absolute inset-x-0 bottom-0 mx-auto max-h-[92vh] max-w-[430px] overflow-y-auto rounded-t-[32px] bg-white pb-8 shadow-2xl">
+            <div className="sticky top-0 z-10 bg-white/95 px-5 pt-4 backdrop-blur">
+              <div className="mx-auto h-1.5 w-14 rounded-full bg-neutral-200" />
+              <div className="mt-4 flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h2 className="truncate text-3xl font-bold text-neutral-950">
+                    {selectedSpot.title}
+                  </h2>
+                  <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-neutral-500">
+                    <MapPin size={16} />
+                    <span className="truncate">
+                      {selectedSpot.area} · {selectedSpot.address || selectedSpot.naverQuery}
+                    </span>
+                  </p>
+                </div>
+                <button
+                  className="rounded-full bg-neutral-100 p-2 text-neutral-700"
+                  onClick={() => setSelectedSpotId(null)}
+                  type="button"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            <div className="px-5 pt-4">
+              <div className="aspect-[4/3] overflow-hidden rounded-[24px] bg-neutral-100">
+                {selectedSpot.image ? (
+                  <div
+                    className="size-full bg-cover bg-center"
+                    style={{ backgroundImage: `url(${selectedSpot.image})` }}
+                  />
+                ) : (
+                  <div className="size-full bg-gradient-to-br from-stone-200 to-neutral-100" />
+                )}
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <button
+                  className="flex h-12 items-center justify-center gap-2 rounded-xl bg-neutral-950 text-sm font-bold text-white"
+                  onClick={() => openNaverMap(selectedSpot)}
+                  type="button"
+                >
+                  <Navigation size={17} />
+                  NAVER 導航
+                </button>
+                <button
+                  className="flex h-12 items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white text-sm font-bold text-neutral-950"
+                  onClick={() => copyAddress(selectedSpot)}
+                  type="button"
+                >
+                  <Copy size={17} />
+                  複製地址
+                </button>
+              </div>
+
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <button
+                  className={`flex h-12 items-center justify-center gap-2 rounded-xl text-sm font-bold ${
+                    selectedSpot.completed
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-neutral-100 text-neutral-700"
+                  }`}
+                  onClick={() => toggleCompleted(selectedSpot.id)}
+                  type="button"
+                >
+                  <Check size={17} />
+                  {selectedSpot.completed ? "取消完成" : "標記完成"}
+                </button>
+                <button
+                  className="flex h-12 items-center justify-center gap-2 rounded-xl bg-neutral-100 text-sm font-bold text-neutral-700"
+                  onClick={() => openEditForm(selectedSpot)}
+                  type="button"
+                >
+                  <Pencil size={17} />
+                  編輯景點
+                </button>
+              </div>
+
+              <section className="mt-5 rounded-[24px] border border-neutral-200 bg-white p-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl bg-neutral-50 p-3">
+                    <CalendarDays size={18} className="text-neutral-500" />
+                    <p className="mt-2 text-sm font-bold text-neutral-950">
+                      {selectedSpot.dayLabel}
+                    </p>
+                    <p className="text-xs font-semibold text-neutral-500">
+                      {selectedSpot.dayDate}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-neutral-50 p-3">
+                    <Clock size={18} className="text-neutral-500" />
+                    <p className="mt-2 text-sm font-bold text-neutral-950">
+                      {selectedSpot.bestStart} - {selectedSpot.bestEnd}
+                    </p>
+                    <p className="text-xs font-semibold text-neutral-500">
+                      {selectedSpot.lightType}
+                    </p>
+                  </div>
+                </div>
+              </section>
+
+              <section className="mt-4 overflow-hidden rounded-[24px] border border-neutral-200 bg-white">
+                <div className="border-b border-neutral-100 p-4">
+                  <div className="flex items-center gap-2">
+                    <Camera size={19} className="text-neutral-700" />
+                    <h3 className="font-bold text-neutral-950">拍攝建議</h3>
+                  </div>
+                  <p className="mt-3 text-sm font-semibold leading-relaxed text-neutral-600">
+                    {selectedSpot.advice}
+                  </p>
+                </div>
+
+                <div className="border-b border-neutral-100 p-4">
+                  <div className="flex items-center gap-2">
+                    <ExternalLink size={19} className="text-neutral-700" />
+                    <h3 className="font-bold text-neutral-950">注意事項</h3>
+                  </div>
+                  <p className="mt-3 text-sm font-semibold leading-relaxed text-neutral-600">
+                    {selectedSpot.note || "依現場人潮、天氣與開放狀態調整拍攝順序。"}
+                  </p>
+                </div>
+
+                <div className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Lightbulb size={19} className="text-neutral-700" />
+                    <h3 className="font-bold text-neutral-950">小貼士</h3>
+                  </div>
+                  <ul className="mt-3 space-y-2 text-sm font-semibold leading-relaxed text-neutral-600">
+                    {tipsForSpot(selectedSpot).map((tip) => (
+                      <li key={tip}>- {tip}</li>
+                    ))}
+                  </ul>
+                </div>
+              </section>
+            </div>
+          </section>
+        </div>
+      )}
+
       {isRouteOpen && (
-        <div className="fixed inset-0 z-[60] bg-black/30">
+        <div className="fixed inset-0 z-[70] bg-black/30">
           <button
             aria-label="關閉今日拍照路線"
             className="absolute inset-0 cursor-default"
@@ -696,14 +903,21 @@ export default function PhotoMapClient() {
                     <div className="flex size-8 items-center justify-center rounded-full bg-neutral-950 text-sm font-bold text-white">
                       {index + 1}
                     </div>
-                    <div className="min-w-0">
+                    <button
+                      className="min-w-0 text-left"
+                      onClick={() => {
+                        setIsRouteOpen(false);
+                        setSelectedSpotId(spot.id);
+                      }}
+                      type="button"
+                    >
                       <p className="truncate font-bold text-neutral-950">
                         {spot.title}
                       </p>
                       <p className="mt-1 text-xs font-semibold text-neutral-500">
                         {spot.bestStart} - {spot.bestEnd} · {spot.area}
                       </p>
-                    </div>
+                    </button>
                     <button
                       className="flex size-10 items-center justify-center rounded-xl bg-neutral-950 text-white"
                       onClick={() => openNaverMap(spot)}
@@ -720,7 +934,7 @@ export default function PhotoMapClient() {
       )}
 
       {isFormOpen && (
-        <div className="fixed inset-0 z-[70] bg-black/30">
+        <div className="fixed inset-0 z-[80] bg-black/30">
           <button
             aria-label="關閉新增景點"
             className="absolute inset-0 cursor-default"
@@ -862,7 +1076,7 @@ export default function PhotoMapClient() {
                 onChange={(event) =>
                   setFormState((state) => ({ ...state, note: event.target.value }))
                 }
-                placeholder="備註"
+                placeholder="注意事項"
                 value={formState.note}
               />
 
@@ -884,7 +1098,7 @@ export default function PhotoMapClient() {
 
                 {formState.image && (
                   <div
-                    className="mt-3 h-36 rounded-xl bg-cover bg-center"
+                    className="mt-3 aspect-[4/3] rounded-xl bg-cover bg-center"
                     style={{ backgroundImage: `url(${formState.image})` }}
                   />
                 )}
