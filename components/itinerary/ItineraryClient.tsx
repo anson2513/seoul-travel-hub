@@ -16,7 +16,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { type FormEvent, useEffect, useState } from "react";
+import { type ChangeEvent, type FormEvent, useEffect, useState } from "react";
 import BottomNav from "@/components/dashboard/BottomNav";
 import {
   categoryLabels,
@@ -38,6 +38,7 @@ type ItineraryFormState = {
   note: string;
   details: string;
   tips: string;
+  image: string;
 };
 
 const categoryTone: Record<ItineraryCategory, string> = {
@@ -73,7 +74,11 @@ const emptyForm: ItineraryFormState = {
   note: "",
   details: "",
   tips: "",
+  image: "",
 };
+
+const maxImageSide = 1200;
+const imageQuality = 0.82;
 
 function readStoredDays() {
   if (typeof window === "undefined") return defaultItineraryDays;
@@ -98,6 +103,112 @@ function normalizeLines(value: string) {
     .filter(Boolean);
 }
 
+function cleanTimeDraft(value: string) {
+  if (value.includes(":")) {
+    return value.replace(/[^\d:]/g, "").slice(0, 5);
+  }
+
+  const digits = value.replace(/\D/g, "").slice(0, 4);
+  if (digits.length < 4) return digits;
+
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+}
+
+function normalizeTime(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  const colonMatch = trimmed.match(/^(\d{1,2}):(\d{1,2})$/);
+  const digits = trimmed.replace(/\D/g, "");
+  let hour = "";
+  let minute = "";
+
+  if (colonMatch) {
+    hour = colonMatch[1];
+    minute = colonMatch[2];
+  } else if (digits.length > 0 && digits.length <= 2) {
+    hour = digits;
+    minute = "00";
+  } else if (digits.length === 3) {
+    hour = digits.slice(0, 1);
+    minute = digits.slice(1);
+  } else if (digits.length === 4) {
+    hour = digits.slice(0, 2);
+    minute = digits.slice(2);
+  } else {
+    return "";
+  }
+
+  const hourNumber = Number(hour);
+  const minuteNumber = Number(minute);
+
+  if (
+    Number.isNaN(hourNumber) ||
+    Number.isNaN(minuteNumber) ||
+    hourNumber > 23 ||
+    minuteNumber > 59
+  ) {
+    return "";
+  }
+
+  return `${String(hourNumber).padStart(2, "0")}:${String(
+    minuteNumber,
+  ).padStart(2, "0")}`;
+}
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+      } else {
+        reject(new Error("Unable to read image."));
+      }
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadImage(dataUrl: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Unable to load image."));
+    image.src = dataUrl;
+  });
+}
+
+async function compressImage(file: File) {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Please choose an image file.");
+  }
+
+  const dataUrl = await readFileAsDataUrl(file);
+  const image = await loadImage(dataUrl);
+  const scale = Math.min(
+    1,
+    maxImageSide / Math.max(image.naturalWidth, image.naturalHeight),
+  );
+  const width = Math.round(image.naturalWidth * scale);
+  const height = Math.round(image.naturalHeight * scale);
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    throw new Error("Unable to process image.");
+  }
+
+  canvas.width = width;
+  canvas.height = height;
+  context.drawImage(image, 0, 0, width, height);
+
+  return canvas.toDataURL("image/jpeg", imageQuality);
+}
+
 function itemToForm(item: ItineraryItem): ItineraryFormState {
   return {
     title: item.title,
@@ -110,6 +221,7 @@ function itemToForm(item: ItineraryItem): ItineraryFormState {
     note: item.note,
     details: item.details.join("\n"),
     tips: item.tips.join("\n"),
+    image: item.image ?? "",
   };
 }
 
@@ -214,13 +326,43 @@ export default function ItineraryClient() {
     setFormState(emptyForm);
   }
 
+  async function handleImageFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    try {
+      const image = await compressImage(file);
+      setFormState((state) => ({ ...state, image }));
+    } catch {
+      window.alert("照片無法讀取，請重新選擇一張圖片。");
+    }
+  }
+
+  function updateTimeField(field: "startTime" | "endTime", value: string) {
+    setFormState((state) => ({
+      ...state,
+      [field]: cleanTimeDraft(value),
+    }));
+  }
+
+  function normalizeTimeField(field: "startTime" | "endTime") {
+    setFormState((state) => ({
+      ...state,
+      [field]: normalizeTime(state[field]),
+    }));
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    const startTime = normalizeTime(formState.startTime) || "09:00";
+    const endTime = normalizeTime(formState.endTime);
+
     const nextItem: ItineraryItem = {
       id: formItemId ?? `custom-${Date.now()}`,
-      startTime: formState.startTime,
-      endTime: formState.endTime || undefined,
+      startTime,
+      endTime: endTime || undefined,
       title: formState.title.trim() || "未命名行程",
       category: formState.category,
       location: formState.location.trim() || "待補地點",
@@ -233,6 +375,7 @@ export default function ItineraryClient() {
       note: formState.note.trim() || "待補備註",
       details: normalizeLines(formState.details),
       tips: normalizeLines(formState.tips),
+      image: formState.image || undefined,
     };
 
     setDays((currentDays) =>
@@ -644,11 +787,9 @@ export default function ItineraryClient() {
               <input
                 className="h-12 rounded-xl border border-neutral-200 px-4 text-base font-semibold outline-none focus:border-neutral-950"
                 inputMode="numeric"
+                onBlur={() => normalizeTimeField("startTime")}
                 onChange={(event) =>
-                  setFormState((state) => ({
-                    ...state,
-                    startTime: event.target.value,
-                  }))
+                  updateTimeField("startTime", event.target.value)
                 }
                 placeholder="開始 09:00"
                 type="text"
@@ -657,11 +798,9 @@ export default function ItineraryClient() {
               <input
                 className="h-12 rounded-xl border border-neutral-200 px-4 text-base font-semibold outline-none focus:border-neutral-950"
                 inputMode="numeric"
+                onBlur={() => normalizeTimeField("endTime")}
                 onChange={(event) =>
-                  setFormState((state) => ({
-                    ...state,
-                    endTime: event.target.value,
-                  }))
+                  updateTimeField("endTime", event.target.value)
                 }
                 placeholder="結束 10:00"
                 type="text"
@@ -685,6 +824,58 @@ export default function ItineraryClient() {
                 </option>
               ))}
             </select>
+
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-bold text-neutral-950">行程照片</p>
+                  <p className="mt-0.5 text-xs font-semibold text-neutral-500">
+                    上傳後會自動適配列表圖片比例
+                  </p>
+                </div>
+                {formState.image && (
+                  <button
+                    className="rounded-full bg-white px-3 py-1 text-xs font-bold text-neutral-600 shadow-sm"
+                    onClick={() =>
+                      setFormState((state) => ({ ...state, image: "" }))
+                    }
+                    type="button"
+                  >
+                    移除
+                  </button>
+                )}
+              </div>
+
+              <div className="overflow-hidden rounded-xl bg-white">
+                {formState.image ? (
+                  <div
+                    aria-label="行程照片預覽"
+                    className="h-36 bg-cover bg-center"
+                    role="img"
+                    style={{ backgroundImage: `url(${formState.image})` }}
+                  />
+                ) : (
+                  <div className="grid h-28 place-items-center border border-dashed border-neutral-300 text-center">
+                    <div>
+                      <Plus className="mx-auto text-neutral-500" size={24} />
+                      <p className="mt-2 text-sm font-bold text-neutral-600">
+                        從手機相簿選擇照片
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <label className="mt-3 flex h-11 cursor-pointer items-center justify-center rounded-xl bg-neutral-950 text-sm font-bold text-white">
+                <input
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={handleImageFileChange}
+                  type="file"
+                />
+                {formState.image ? "更換照片" : "上傳照片"}
+              </label>
+            </div>
 
             <input
               className="h-12 w-full rounded-xl border border-neutral-200 px-4 text-base font-semibold outline-none focus:border-neutral-950"
