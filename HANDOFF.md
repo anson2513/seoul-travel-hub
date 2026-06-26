@@ -68,6 +68,7 @@ Completed and deployed as V1.
 - Sort mode is button-based, not long-press based.
 - NAVER Map navigation is used for itinerary navigation.
 - Detail panel includes notes, tips, NAVER navigation, and copy address.
+- NAVER navigation no longer auto-falls back to the App Store. It only attempts to open the installed NAVER Map app.
 
 Important data fixes already applied:
 
@@ -106,6 +107,7 @@ Completed and deployed as V1.1.
 - `推薦拍攝` is visible before the trip and recommends autumn/golden-hour spots.
 - During the trip, recommendation logic can highlight time-relevant spots.
 - Photo Map numbering was moved from the image overlay to the whitespace below each spot image, using labels like `#01`.
+- Photo Map NAVER navigation no longer auto-falls back to the App Store. It only attempts to open the installed NAVER Map app.
 
 ### Splash Screen and Home Screen Icon
 
@@ -248,6 +250,20 @@ Covered sections:
 - Photo Map and recommendation flow.
 
 If the office computer needs the MP4, copy it manually or add it to a separate release/share location. It is not required by the app runtime.
+
+Social sharing images generated at home on 2026-06-26:
+
+```text
+C:\Users\ANSON\Documents\Codex\2026-06-25\y\outputs\social-9x16-01-cover.png
+C:\Users\ANSON\Documents\Codex\2026-06-25\y\outputs\social-9x16-02-overview.png
+C:\Users\ANSON\Documents\Codex\2026-06-25\y\outputs\social-9x16-03-home-dashboard.png
+C:\Users\ANSON\Documents\Codex\2026-06-25\y\outputs\social-9x16-04-itinerary-naver.png
+C:\Users\ANSON\Documents\Codex\2026-06-25\y\outputs\social-9x16-05-accounting-tax-refund.png
+C:\Users\ANSON\Documents\Codex\2026-06-25\y\outputs\social-9x16-06-photo-map.png
+C:\Users\ANSON\Documents\Codex\2026-06-25\y\outputs\social-9x16-07-story-cover.png
+```
+
+All seven are `1080x1920` 9:16 PNG files for social posts/stories.
 
 ## Development Notes
 

@@ -292,15 +292,7 @@ function openNaverMap(item: ItineraryItem) {
     return;
   }
 
-  const startedAt = Date.now();
   window.location.href = makeNaverSearchUrl(query);
-
-  window.setTimeout(() => {
-    if (Date.now() - startedAt < 1800) {
-      window.location.href =
-        "https://apps.apple.com/tw/app/naver-map-navigation/id311867728";
-    }
-  }, 1200);
 }
 
 function visualLabel(item: ItineraryItem) {
