@@ -1,7 +1,7 @@
 # SEOUL Travel Hub Handoff
 
-Date: 2026-06-25
-Status: Home, Itinerary, Accounting, and Photo Map are pushed to GitHub/Vercel.
+Date: 2026-06-26
+Status: Home, Itinerary, Accounting, Photo Map, Splash Screen, and PWA install settings are pushed to GitHub/Vercel.
 
 ## Repository
 
@@ -105,10 +105,60 @@ Completed and deployed as V1.1.
 - Top route icon opens a lightweight route panel, not a heavy map.
 - `推薦拍攝` is visible before the trip and recommends autumn/golden-hour spots.
 - During the trip, recommendation logic can highlight time-relevant spots.
-
-## Next Planned Work
+- Photo Map numbering was moved from the image overlay to the whitespace below each spot image, using labels like `#01`.
 
 ### Splash Screen and Home Screen Icon
+
+Completed and deployed.
+
+- Splash screen appears for about 1.5 seconds before entering the Home dashboard.
+- Text:
+
+```text
+SEOUL Travel Hub
+開發者 by ANSON
+```
+
+- Icon and text group are positioned around 42% viewport height.
+- The lower line art is based on the actual Home hero mood: cherry blossom branches, N Seoul Tower, sunset, Han River bridge, and city skyline.
+- Implementation files:
+
+```text
+components/splash/SplashScreen.tsx
+app/layout.tsx
+```
+
+- Production assets:
+
+```text
+public/images/app-icon-black-gold.png
+public/images/splash-hero-line-art.png
+app/icon.png
+app/apple-icon.png
+```
+
+### PWA / iPhone Home Screen
+
+Completed on 2026-06-26.
+
+Issue found:
+
+- When the site was added to the iPhone Home Screen, iOS opened it with a browser-style toolbar.
+- That toolbar could overlap the app bottom navigation, making Home/Itinerary/Accounting/Photo Map difficult or impossible to tap.
+
+Fix applied:
+
+- Added `app/manifest.ts` with `display: "standalone"`, app name, theme color, scope, start URL, portrait orientation, and app icon.
+- Added Apple web app metadata in `app/layout.tsx`.
+- Added safe-area bottom spacing to `components/dashboard/BottomNav.tsx`.
+
+Important user testing note:
+
+- On iPhone, delete the old Home Screen shortcut and add the site to Home Screen again after deployment. iOS may keep old shortcut metadata until it is recreated.
+
+## Previous Design Notes
+
+### Splash Screen and Home Screen Icon Notes
 
 User selected the iPhone home-screen short name:
 
@@ -171,52 +221,43 @@ SEOUL Travel Hub
 - The lower line art should be based on the actual Home hero image: cherry blossom branches, N Seoul Tower, sunset mood, Han River bridge, and city skyline.
 - Do not add the previous large pale-gold glow behind the app icon.
 
-Implementation update:
-
-- Splash screen has been implemented in:
-
-```text
-components/splash/SplashScreen.tsx
-app/layout.tsx
-```
-
-- Production assets are in:
-
-```text
-public/images/app-icon-black-gold.png
-public/images/splash-hero-line-art.png
-app/icon.png
-app/apple-icon.png
-```
-
-- Build passes after implementation.
-
 ## Future Work
 
-After the whole app is finalized, create a roughly 1-minute vertical mobile demo video using real app screen recording, not fake/generated UI.
+Demo video was generated at home on 2026-06-25 using real production app screenshots, not fake/generated UI.
 
-The demo should highlight:
+Local output file on the home computer:
+
+```text
+C:\Users\ANSON\Documents\Codex\2026-06-25\y\outputs\seoul-travel-hub-intro.mp4
+```
+
+Video details:
+
+- 1080x1920 vertical MP4.
+- About 1 minute 30 seconds.
+- No voiceover.
+- Burned-in subtitles.
+- Simple transitions.
+- Light synthesized background audio.
+
+Covered sections:
 
 - Home dashboard.
 - Itinerary editing/navigation.
 - Accounting with tax refund reminders.
 - Photo Map and recommendation flow.
 
-Preferred format:
-
-```text
-1080x1920 vertical
-```
+If the office computer needs the MP4, copy it manually or add it to a separate release/share location. It is not required by the app runtime.
 
 ## Development Notes
 
 Commands:
 
 ```powershell
-npm install
-npm run dev
-npm run lint
-npm run build
+pnpm install
+node node_modules\next\dist\bin\next dev
+node node_modules\eslint\bin\eslint.js <files>
+node node_modules\next\dist\bin\next build
 ```
 
 Local dev URL:

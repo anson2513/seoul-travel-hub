@@ -16,7 +16,7 @@ export default function BottomNav() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50">
-      <div className="mx-auto max-w-[430px] px-4 pb-3">
+      <div className="mx-auto max-w-[430px] px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         <div className="flex h-24 items-center justify-around rounded-[30px] border border-neutral-200/80 bg-white/95 shadow-[0_-10px_35px_rgba(39,31,27,0.08)] backdrop-blur-xl">
           {navItems.map((item) => {
             const Icon = item.icon;
