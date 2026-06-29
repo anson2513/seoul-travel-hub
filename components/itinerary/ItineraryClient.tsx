@@ -28,6 +28,7 @@ import {
 } from "@/lib/itinerary-data";
 
 type ItineraryFormState = {
+  dayId: string;
   title: string;
   startTime: string;
   endTime: string;
@@ -64,6 +65,7 @@ const categoryAccent: Record<ItineraryCategory, string> = {
 };
 
 const emptyForm: ItineraryFormState = {
+  dayId: defaultItineraryDays[0].id,
   title: "",
   startTime: "09:00",
   endTime: "",
@@ -79,8 +81,7 @@ const emptyForm: ItineraryFormState = {
 
 const maxImageSide = 1200;
 const imageQuality = 0.82;
-const airportRailroadImage =
-  "https://commons.wikimedia.org/wiki/Special:Redirect/file/AREX%20Seoul%20Station%20Platform.jpg?width=900";
+const airportRailroadImage = "/images/arex-train.jpg";
 const kaohsiungAirportImage =
   "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=900&auto=format&fit=crop";
 
@@ -253,8 +254,9 @@ async function compressImage(file: File) {
   return canvas.toDataURL("image/jpeg", imageQuality);
 }
 
-function itemToForm(item: ItineraryItem): ItineraryFormState {
+function itemToForm(item: ItineraryItem, dayId: string): ItineraryFormState {
   return {
+    dayId,
     title: item.title,
     startTime: item.startTime,
     endTime: item.endTime ?? "",
@@ -267,6 +269,18 @@ function itemToForm(item: ItineraryItem): ItineraryFormState {
     tips: item.tips.join("\n"),
     image: item.image ?? "",
   };
+}
+
+function insertItemByStartTime(items: ItineraryItem[], nextItem: ItineraryItem) {
+  const insertAt = items.findIndex(
+    (item) => item.startTime.localeCompare(nextItem.startTime) > 0,
+  );
+
+  if (insertAt === -1) return [...items, nextItem];
+
+  const nextItems = [...items];
+  nextItems.splice(insertAt, 0, nextItem);
+  return nextItems;
 }
 
 function makeNaverSearchUrl(query: string) {
@@ -345,13 +359,13 @@ export default function ItineraryClient() {
 
   function openAddForm() {
     setFormItemId(null);
-    setFormState(emptyForm);
+    setFormState({ ...emptyForm, dayId: activeDayId });
     setIsFormOpen(true);
   }
 
   function openEditForm(item: ItineraryItem) {
     setFormItemId(item.id);
-    setFormState(itemToForm(item));
+    setFormState(itemToForm(item, activeDayId));
     setSelectedItem(null);
     setIsFormOpen(true);
   }
@@ -414,23 +428,49 @@ export default function ItineraryClient() {
       image: formState.image || undefined,
     };
 
-    setDays((currentDays) =>
-      currentDays.map((day) => {
-        if (day.id !== activeDayId) return day;
+    const targetDayId = days.some((day) => day.id === formState.dayId)
+      ? formState.dayId
+      : activeDayId;
 
-        if (formItemId) {
+    setDays((currentDays) => {
+      const sourceDayId = formItemId
+        ? currentDays.find((day) =>
+            day.items.some((item) => item.id === formItemId),
+          )?.id
+        : null;
+
+      if (formItemId && sourceDayId === targetDayId) {
+        return currentDays.map((day) =>
+          day.id === targetDayId
+            ? {
+                ...day,
+                items: day.items.map((item) =>
+                  item.id === formItemId ? { ...item, ...nextItem } : item,
+                ),
+              }
+            : day,
+        );
+      }
+
+      return currentDays.map((day) => {
+        const itemsWithoutMovingItem = formItemId
+          ? day.items.filter((item) => item.id !== formItemId)
+          : day.items;
+
+        if (day.id === targetDayId) {
           return {
             ...day,
-            items: day.items.map((item) =>
-              item.id === formItemId ? { ...item, ...nextItem } : item,
-            ),
+            items: insertItemByStartTime(itemsWithoutMovingItem, nextItem),
           };
         }
 
-        return { ...day, items: [...day.items, nextItem] };
-      }),
-    );
+        return itemsWithoutMovingItem.length === day.items.length
+          ? day
+          : { ...day, items: itemsWithoutMovingItem };
+      });
+    });
 
+    setActiveDayId(targetDayId);
     closeForm();
   }
 
@@ -554,15 +594,27 @@ export default function ItineraryClient() {
               onContextMenu={(event) => event.preventDefault()}
             >
               <button
-                className="border-r border-neutral-100 px-3 py-5 text-left"
+                className="relative border-r border-neutral-100 px-3 py-5 text-left"
                 onClick={() => setSelectedItem(item)}
                 type="button"
               >
-                <p className="text-sm font-bold text-neutral-950">
+                <p className="text-center text-[13px] font-bold tabular-nums text-neutral-950">
                   {item.startTime}
                 </p>
-                <div className="relative mx-auto mt-4 grid h-9 w-9 place-items-center rounded-full border border-neutral-200 bg-white text-sm font-bold text-neutral-500">
-                  {index + 1}
+                {index > 0 && (
+                  <span className="absolute left-1/2 top-0 h-[66px] w-px -translate-x-1/2 bg-neutral-200" />
+                )}
+                {index < activeDay.items.length - 1 && (
+                  <span className="absolute bottom-0 left-1/2 top-[66px] w-px -translate-x-1/2 bg-neutral-200" />
+                )}
+                <div
+                  className={`relative z-10 mx-auto mt-3 grid h-7 w-7 place-items-center rounded-full border text-[11px] font-semibold tabular-nums transition-colors ${
+                    isEditMode
+                      ? "border-neutral-950 bg-neutral-950 text-white"
+                      : "border-[#D8D3CB] bg-[#F5F2ED] text-neutral-600"
+                  }`}
+                >
+                  {String(index + 1).padStart(2, "0")}
                 </div>
               </button>
 
@@ -810,6 +862,28 @@ export default function ItineraryClient() {
             className="mt-5 max-h-[72vh] space-y-3 overflow-y-auto pr-1"
             onSubmit={handleSubmit}
           >
+            <label className="block rounded-xl border border-neutral-200 px-4 py-2 outline-none focus-within:border-neutral-950">
+              <span className="block text-xs font-bold text-neutral-500">
+                安排日期
+              </span>
+              <select
+                className="mt-0.5 h-7 w-full bg-transparent text-base font-semibold text-neutral-950 outline-none"
+                onChange={(event) =>
+                  setFormState((state) => ({
+                    ...state,
+                    dayId: event.target.value,
+                  }))
+                }
+                value={formState.dayId}
+              >
+                {days.map((day) => (
+                  <option key={day.id} value={day.id}>
+                    {day.label}｜{day.tabDate} ({day.weekday})
+                  </option>
+                ))}
+              </select>
+            </label>
+
             <input
               className="h-12 w-full rounded-xl border border-neutral-200 px-4 text-base font-semibold outline-none focus:border-neutral-950"
               onChange={(event) =>

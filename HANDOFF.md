@@ -66,6 +66,9 @@ Completed and deployed as V1.
 - Uploaded photos fit the card image area without distortion.
 - Time input auto-formats values like `2230` into `22:30`.
 - Sort mode is button-based, not long-press based.
+- Timeline order markers use compact two-digit labels such as `01`, with a stronger black state while sorting.
+- Add/edit itinerary forms include a DAY 1 to DAY 6 date selector.
+- Moving an itinerary item to another day automatically inserts it by start time and opens the destination day after saving.
 - NAVER Map navigation is used for itinerary navigation.
 - Detail panel includes notes, tips, NAVER navigation, and copy address.
 - NAVER navigation no longer auto-falls back to the App Store. It only attempts to open the installed NAVER Map app.
@@ -73,8 +76,7 @@ Completed and deployed as V1.
 Important data fixes already applied:
 
 - DAY1 third item changed to `前往飯店`.
-- DAY1 third item has an AREX image.
-- DAY6 fifth item has an AREX image.
+- DAY1 third item and DAY6 fifth item use the user-provided AREX train image stored at `public/images/arex-train.jpg`.
 - DAY6 final arrival item says `抵達小港機場` and uses the airport image.
 
 ### Accounting

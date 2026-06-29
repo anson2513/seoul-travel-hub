@@ -39,8 +39,7 @@ export const itineraryStorageKey = "seoul-travel-hub-itinerary-v2";
 
 const hotelRoomImage =
   "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=900&auto=format&fit=crop";
-const airportRailroadImage =
-  "https://commons.wikimedia.org/wiki/Special:Redirect/file/AREX%20Seoul%20Station%20Platform.jpg?width=900";
+const airportRailroadImage = "/images/arex-train.jpg";
 const kaohsiungAirportImage =
   "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=900&auto=format&fit=crop";
 
