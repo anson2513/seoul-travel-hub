@@ -4,7 +4,9 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  Building2,
   CalendarDays,
+  ChevronRight,
   Clock,
   Copy,
   Edit3,
@@ -13,7 +15,9 @@ import {
   MapPin,
   Navigation,
   Plus,
+  Search,
   Trash2,
+  Utensils,
   X,
 } from "lucide-react";
 import { type ChangeEvent, type FormEvent, useEffect, useState } from "react";
@@ -40,6 +44,20 @@ type ItineraryFormState = {
   details: string;
   tips: string;
   image: string;
+};
+
+type HotelInfo = {
+  name: string;
+  address: string;
+  naverQuery: string;
+};
+
+type HotelsByDay = Record<string, HotelInfo>;
+
+type NearbyFoodCategory = {
+  label: string;
+  description: string;
+  query: string;
 };
 
 const categoryTone: Record<ItineraryCategory, string> = {
@@ -84,6 +102,55 @@ const imageQuality = 0.82;
 const airportRailroadImage = "/images/arex-train.jpg";
 const kaohsiungAirportImage =
   "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=900&auto=format&fit=crop";
+const hotelStorageKey = "seoul-travel-hub-hotels-v1";
+const defaultHotelInfo: HotelInfo = {
+  name: "弘大住宿",
+  address: "弘大入口站周邊",
+  naverQuery: "홍대입구역",
+};
+const nearbyFoodCategories: NearbyFoodCategory[] = [
+  { label: "早餐", description: "早晨營業", query: "아침식사" },
+  { label: "正餐", description: "人氣餐廳", query: "맛집" },
+  { label: "咖啡", description: "咖啡甜點", query: "카페" },
+  { label: "宵夜", description: "深夜用餐", query: "야식" },
+  { label: "24 小時", description: "全天營業", query: "24시간 음식점" },
+];
+
+function makeDefaultHotels(): HotelsByDay {
+  return Object.fromEntries(
+    defaultItineraryDays.map((day) => [day.id, { ...defaultHotelInfo }]),
+  );
+}
+
+function readStoredHotels(): HotelsByDay {
+  const defaults = makeDefaultHotels();
+  if (typeof window === "undefined") return defaults;
+
+  try {
+    const raw = window.localStorage.getItem(hotelStorageKey);
+    if (!raw) return defaults;
+
+    const parsed = JSON.parse(raw) as HotelsByDay;
+    return Object.fromEntries(
+      Object.entries(defaults).map(([dayId, fallback]) => {
+        const stored = parsed?.[dayId];
+        return [
+          dayId,
+          stored && typeof stored === "object"
+            ? {
+                name: stored.name || fallback.name,
+                address: stored.address || fallback.address,
+                naverQuery:
+                  stored.naverQuery || stored.address || fallback.naverQuery,
+              }
+            : fallback,
+        ];
+      }),
+    );
+  } catch {
+    return defaults;
+  }
+}
 
 function applyItineraryMigrations(days: ItineraryDay[]) {
   return days.map((day) => ({
@@ -299,6 +366,10 @@ function makeAndroidNaverIntent(query: string) {
 
 function openNaverMap(item: ItineraryItem) {
   const query = item.naverQuery || item.address || item.location || item.title;
+  openNaverSearch(query);
+}
+
+function openNaverSearch(query: string) {
   const userAgent = navigator.userAgent.toLowerCase();
 
   if (userAgent.includes("android")) {
@@ -316,19 +387,26 @@ function visualLabel(item: ItineraryItem) {
 export default function ItineraryClient() {
   const [days, setDays] = useState(defaultItineraryDays);
   const [activeDayId, setActiveDayId] = useState(defaultItineraryDays[0].id);
+  const [hotelsByDay, setHotelsByDay] = useState<HotelsByDay>(makeDefaultHotels);
+  const [hotelFormState, setHotelFormState] =
+    useState<HotelInfo>(defaultHotelInfo);
   const [selectedItem, setSelectedItem] = useState<ItineraryItem | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [formItemId, setFormItemId] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isFoodPanelOpen, setIsFoodPanelOpen] = useState(false);
+  const [isHotelFormOpen, setIsHotelFormOpen] = useState(false);
   const [formState, setFormState] = useState<ItineraryFormState>(emptyForm);
   const [hasHydrated, setHasHydrated] = useState(false);
 
   const activeDay = days.find((day) => day.id === activeDayId) ?? days[0];
+  const activeHotel = hotelsByDay[activeDayId] ?? defaultHotelInfo;
 
   useEffect(() => {
     const storedDays = readStoredDays();
     setDays(storedDays);
     setActiveDayId(storedDays[0]?.id ?? defaultItineraryDays[0].id);
+    setHotelsByDay(readStoredHotels());
     setHasHydrated(true);
   }, []);
 
@@ -336,6 +414,11 @@ export default function ItineraryClient() {
     if (!hasHydrated) return;
     window.localStorage.setItem(itineraryStorageKey, JSON.stringify(days));
   }, [days, hasHydrated]);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    window.localStorage.setItem(hotelStorageKey, JSON.stringify(hotelsByDay));
+  }, [hotelsByDay, hasHydrated]);
 
   function moveItem(itemId: string, direction: "up" | "down") {
     setDays((currentDays) =>
@@ -360,7 +443,55 @@ export default function ItineraryClient() {
   function openAddForm() {
     setFormItemId(null);
     setFormState({ ...emptyForm, dayId: activeDayId });
+    setIsFoodPanelOpen(false);
+    setIsHotelFormOpen(false);
     setIsFormOpen(true);
+  }
+
+  function openRestaurantForm() {
+    setFormItemId(null);
+    setFormState({
+      ...emptyForm,
+      dayId: activeDayId,
+      category: "food",
+      location: `${activeHotel.name}附近`,
+      address: activeHotel.address,
+      naverQuery: activeHotel.naverQuery,
+      note: "飯店附近用餐",
+    });
+    setIsFoodPanelOpen(false);
+    setIsFormOpen(true);
+  }
+
+  function openHotelForm() {
+    setHotelFormState(activeHotel);
+    setIsFoodPanelOpen(false);
+    setIsHotelFormOpen(true);
+  }
+
+  function handleHotelSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const nextHotel: HotelInfo = {
+      name: hotelFormState.name.trim() || "未命名飯店",
+      address: hotelFormState.address.trim() || "待補飯店地址",
+      naverQuery:
+        hotelFormState.naverQuery.trim() ||
+        hotelFormState.address.trim() ||
+        hotelFormState.name.trim(),
+    };
+
+    setHotelsByDay((current) => ({
+      ...current,
+      [activeDayId]: nextHotel,
+    }));
+    setIsHotelFormOpen(false);
+  }
+
+  function searchNearbyFood(category: NearbyFoodCategory) {
+    const hotelQuery =
+      activeHotel.naverQuery || activeHotel.address || activeHotel.name;
+    openNaverSearch(`${hotelQuery} ${category.query}`);
   }
 
   function openEditForm(item: ItineraryItem) {
@@ -535,6 +666,8 @@ export default function ItineraryClient() {
                   setActiveDayId(day.id);
                   setIsEditMode(false);
                   setSelectedItem(null);
+                  setIsFoodPanelOpen(false);
+                  setIsHotelFormOpen(false);
                 }}
                 type="button"
               >
@@ -547,8 +680,50 @@ export default function ItineraryClient() {
           })}
         </div>
 
+        <section className="mt-4 rounded-[22px] border border-neutral-200 bg-white p-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-neutral-100 text-neutral-800">
+              <Building2 size={22} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-neutral-500">
+                {activeDay.label} 住宿地點
+              </p>
+              <h2 className="mt-0.5 truncate text-lg font-bold text-neutral-950">
+                {activeHotel.name}
+              </h2>
+              <p className="mt-1 truncate text-sm font-semibold text-neutral-500">
+                {activeHotel.address}
+              </p>
+            </div>
+            <button
+              aria-label={`修改 ${activeDay.label} 飯店`}
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-neutral-100 text-neutral-700"
+              onClick={openHotelForm}
+              type="button"
+            >
+              <Edit3 size={18} />
+            </button>
+          </div>
+
+          <button
+            className="mt-4 flex h-12 w-full items-center gap-3 rounded-xl bg-neutral-950 px-4 text-left text-white"
+            onClick={() => setIsFoodPanelOpen(true)}
+            type="button"
+          >
+            <Utensils size={19} />
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-bold">飯店附近美食</span>
+              <span className="block text-xs font-semibold text-white/60">
+                用 NAVER 搜尋步行可達餐廳
+              </span>
+            </span>
+            <ChevronRight size={19} />
+          </button>
+        </section>
+
         <button
-          className={`mt-6 w-full rounded-[22px] border p-4 text-left shadow-sm transition ${
+          className={`mt-4 w-full rounded-[22px] border p-4 text-left shadow-sm transition ${
             isEditMode
               ? "border-neutral-950 bg-neutral-950 text-white"
               : "border-neutral-200 bg-white/80 text-neutral-950"
@@ -716,6 +891,150 @@ export default function ItineraryClient() {
       </div>
 
       <BottomNav />
+
+      {isFoodPanelOpen && (
+        <div className="fixed inset-x-0 bottom-0 z-[65] mx-auto max-w-[430px] rounded-t-[30px] border border-neutral-200 bg-white px-5 pb-32 pt-4 shadow-[0_-18px_45px_rgba(39,31,27,0.18)]">
+          <div className="mx-auto mb-5 h-1.5 w-14 rounded-full bg-neutral-300" />
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-neutral-950">
+                飯店附近美食
+              </h2>
+              <p className="mt-1 text-sm font-semibold text-neutral-500">
+                {activeDay.label} · {activeHotel.name}
+              </p>
+            </div>
+            <button
+              aria-label="關閉附近美食"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-neutral-100"
+              onClick={() => setIsFoodPanelOpen(false)}
+              type="button"
+            >
+              <X size={22} />
+            </button>
+          </div>
+
+          <div className="mt-4 flex items-center gap-3 rounded-2xl bg-neutral-100 p-3">
+            <Building2 className="shrink-0 text-neutral-700" size={20} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-neutral-950">
+                {activeHotel.address}
+              </p>
+              <p className="mt-0.5 text-xs font-semibold text-neutral-500">
+                NAVER 將依此位置搜尋
+              </p>
+            </div>
+            <button
+              className="shrink-0 rounded-lg bg-white px-3 py-2 text-xs font-bold text-neutral-700"
+              onClick={openHotelForm}
+              type="button"
+            >
+              修改
+            </button>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            {nearbyFoodCategories.map((category) => (
+              <button
+                key={category.label}
+                className="flex min-h-16 items-center gap-3 rounded-2xl border border-neutral-200 px-3 text-left"
+                onClick={() => searchNearbyFood(category)}
+                type="button"
+              >
+                <Search className="shrink-0 text-neutral-600" size={18} />
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold text-neutral-950">
+                    {category.label}
+                  </span>
+                  <span className="block text-xs font-semibold text-neutral-500">
+                    {category.description}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <p className="mt-4 text-center text-xs font-semibold leading-relaxed text-neutral-500">
+            評價、營業狀態與步行距離以 NAVER Map 最新資料為準
+          </p>
+
+          <button
+            className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-neutral-950 text-sm font-bold text-neutral-950"
+            onClick={openRestaurantForm}
+            type="button"
+          >
+            <Plus size={18} />
+            新增餐廳到行程
+          </button>
+        </div>
+      )}
+
+      {isHotelFormOpen && (
+        <div className="fixed inset-x-0 bottom-0 z-[75] mx-auto max-w-[430px] rounded-t-[30px] border border-neutral-200 bg-white px-5 pb-32 pt-4 shadow-[0_-18px_45px_rgba(39,31,27,0.18)]">
+          <div className="mx-auto mb-5 h-1.5 w-14 rounded-full bg-neutral-300" />
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-neutral-950">修改飯店資訊</h2>
+              <p className="mt-1 text-sm font-semibold text-neutral-500">
+                只套用於 {activeDay.label}
+              </p>
+            </div>
+            <button
+              aria-label="關閉飯店表單"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-neutral-100"
+              onClick={() => setIsHotelFormOpen(false)}
+              type="button"
+            >
+              <X size={22} />
+            </button>
+          </div>
+
+          <form className="mt-5 space-y-3" onSubmit={handleHotelSubmit}>
+            <input
+              className="h-12 w-full rounded-xl border border-neutral-200 px-4 text-base font-semibold outline-none focus:border-neutral-950"
+              onChange={(event) =>
+                setHotelFormState((state) => ({
+                  ...state,
+                  name: event.target.value,
+                }))
+              }
+              placeholder="飯店名稱"
+              value={hotelFormState.name}
+            />
+            <input
+              className="h-12 w-full rounded-xl border border-neutral-200 px-4 text-base font-semibold outline-none focus:border-neutral-950"
+              onChange={(event) =>
+                setHotelFormState((state) => ({
+                  ...state,
+                  address: event.target.value,
+                }))
+              }
+              placeholder="飯店地址或附近地標"
+              value={hotelFormState.address}
+            />
+            <input
+              className="h-12 w-full rounded-xl border border-neutral-200 px-4 text-base font-semibold outline-none focus:border-neutral-950"
+              onChange={(event) =>
+                setHotelFormState((state) => ({
+                  ...state,
+                  naverQuery: event.target.value,
+                }))
+              }
+              placeholder="NAVER 韓文搜尋字，例如：홍대입구역"
+              value={hotelFormState.naverQuery}
+            />
+            <p className="px-1 text-xs font-semibold leading-relaxed text-neutral-500">
+              建議填入韓文飯店名稱或韓文地址，附近搜尋會更準確。
+            </p>
+            <button
+              className="flex h-14 w-full items-center justify-center rounded-2xl bg-neutral-950 text-base font-bold text-white"
+              type="submit"
+            >
+              儲存飯店資訊
+            </button>
+          </form>
+        </div>
+      )}
 
       {selectedItem && (
         <div className="fixed inset-x-0 bottom-0 z-[60] mx-auto max-w-[430px] rounded-t-[30px] border border-neutral-200 bg-white px-5 pb-32 pt-4 shadow-[0_-18px_45px_rgba(39,31,27,0.18)]">

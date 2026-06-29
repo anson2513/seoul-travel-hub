@@ -69,6 +69,9 @@ Completed and deployed as V1.
 - Timeline order markers use compact two-digit labels such as `01`, with a stronger black state while sorting.
 - Add/edit itinerary forms include a DAY 1 to DAY 6 date selector.
 - Moving an itinerary item to another day automatically inserts it by start time and opens the destination day after saving.
+- Each day now stores its own hotel information locally, so changing the DAY 5 hotel does not change other days.
+- The itinerary page includes a lightweight `飯店附近美食` panel with breakfast, meal, cafe, late-night, and 24-hour NAVER Map searches based on the active day's hotel.
+- The nearby-food panel can open a prefilled restaurant itinerary form for the active day.
 - NAVER Map navigation is used for itinerary navigation.
 - Detail panel includes notes, tips, NAVER navigation, and copy address.
 - NAVER navigation no longer auto-falls back to the App Store. It only attempts to open the installed NAVER Map app.
