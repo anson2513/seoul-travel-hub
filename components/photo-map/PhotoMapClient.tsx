@@ -28,6 +28,8 @@ import {
 import BottomNav from "@/components/dashboard/BottomNav";
 import {
   defaultPhotoMapState,
+  legacyPhotoMapStorageKey,
+  migrateLegacyPhotoMapState,
   photoMapStorageKey,
   photoTripDays,
   type PhotoMapState,
@@ -59,7 +61,7 @@ const emptyForm: PhotoSpotFormState = {
   area: "",
   address: "",
   naverQuery: "",
-  dayDate: "2026-10-10",
+  dayDate: photoTripDays[0].id,
   bestStart: "16:45",
   bestEnd: "18:20",
   lightType: "夕陽 / 藍調",
@@ -76,14 +78,17 @@ function readStoredPhotoMap() {
 
   try {
     const raw = window.localStorage.getItem(photoMapStorageKey);
-    if (!raw) return defaultPhotoMapState;
+    if (raw) {
+      const parsed = JSON.parse(raw) as PhotoMapState;
+      if (Array.isArray(parsed.spots)) return parsed;
+    }
 
-    const parsed = JSON.parse(raw) as PhotoMapState;
-    if (!Array.isArray(parsed.spots)) return defaultPhotoMapState;
+    const legacyRaw = window.localStorage.getItem(legacyPhotoMapStorageKey);
+    const legacyState = legacyRaw
+      ? (JSON.parse(legacyRaw) as PhotoMapState)
+      : null;
 
-    return {
-      spots: parsed.spots.length > 0 ? parsed.spots : defaultPhotoMapState.spots,
-    };
+    return migrateLegacyPhotoMapState(legacyState);
   } catch {
     return defaultPhotoMapState;
   }
@@ -407,6 +412,8 @@ export default function PhotoMapClient() {
     const existingSpot = photoMap.spots.find((spot) => spot.id === editingSpotId);
     const nextSpot: PhotoSpot = {
       id: editingSpotId ?? `photo-${Date.now()}`,
+      sourcePlaceId: existingSpot?.sourcePlaceId,
+      isCustom: existingSpot?.isCustom ?? !editingSpotId,
       title: formState.title.trim(),
       area: formState.area.trim() || "首爾",
       address: formState.address.trim(),
