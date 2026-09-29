@@ -168,7 +168,25 @@ function readStoredDays() {
     const raw = window.localStorage.getItem(itineraryStorageKey);
     if (raw) {
       const parsed = JSON.parse(raw) as ItineraryDay[];
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const masterItems: Record<string, ItineraryItem> = Object.fromEntries(
+          defaultItineraryDays.flatMap((day) =>
+            day.items.map((item) => [item.id, item] as const),
+          ),
+        );
+
+        return parsed.map((day) => ({
+          ...day,
+          items: day.items.map((item) => {
+            if (item.isCustom || item.id.startsWith("custom-")) return item;
+
+            const masterItem = masterItems[item.id];
+            return masterItem
+              ? { ...item, naverQuery: masterItem.naverQuery }
+              : item;
+          }),
+        }));
+      }
     }
 
     // Final Master Data replaces the old seed while retaining user-created rows.
@@ -339,14 +357,14 @@ function insertItemByStartTime(items: ItineraryItem[], nextItem: ItineraryItem) 
 
 function makeNaverSearchUrl(query: string) {
   const encodedQuery = encodeURIComponent(query);
-  const appname = encodeURIComponent("seoul-travel-hub.vercel.app");
+  const appname = encodeURIComponent("https://seoul-travel-hub.vercel.app");
 
   return `nmap://search?query=${encodedQuery}&appname=${appname}`;
 }
 
 function makeAndroidNaverIntent(query: string) {
   const encodedQuery = encodeURIComponent(query);
-  const appname = encodeURIComponent("seoul-travel-hub.vercel.app");
+  const appname = encodeURIComponent("https://seoul-travel-hub.vercel.app");
 
   return `intent://search?query=${encodedQuery}&appname=${appname}#Intent;scheme=nmap;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.nhn.android.nmap;end`;
 }

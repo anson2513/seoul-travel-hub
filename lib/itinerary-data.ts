@@ -171,9 +171,10 @@ function masterPlaceToItem(item: Place): ItineraryItem {
     : undefined;
   if (transportNote) details.push(`交通：${transportNote}`);
 
-  const query = [item.navigationKeyword ?? item.nameKo, item.addressKo]
-    .filter(Boolean)
-    .join(" ");
+  // NAVER integrated search is more reliable with one canonical place name.
+  // The full address remains available as a fallback and for copying.
+  const query =
+    item.navigationKeyword ?? item.nameKo ?? item.addressKo ?? item.nameZh;
 
   return {
     id: item.id,

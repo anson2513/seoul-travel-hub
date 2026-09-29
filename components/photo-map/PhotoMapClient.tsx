@@ -80,7 +80,23 @@ function readStoredPhotoMap() {
     const raw = window.localStorage.getItem(photoMapStorageKey);
     if (raw) {
       const parsed = JSON.parse(raw) as PhotoMapState;
-      if (Array.isArray(parsed.spots)) return parsed;
+      if (Array.isArray(parsed.spots)) {
+        const masterSpots: Record<string, PhotoSpot> = Object.fromEntries(
+          defaultPhotoMapState.spots.map((spot) => [spot.id, spot] as const),
+        );
+
+        return {
+          ...parsed,
+          spots: parsed.spots.map((spot) => {
+            if (spot.isCustom) return spot;
+
+            const masterSpot = masterSpots[spot.id];
+            return masterSpot
+              ? { ...spot, naverQuery: masterSpot.naverQuery }
+              : spot;
+          }),
+        };
+      }
     }
 
     const legacyRaw = window.localStorage.getItem(legacyPhotoMapStorageKey);
@@ -177,14 +193,14 @@ function isGoldenHourSpot(spot: PhotoSpot) {
 
 function makeNaverSearchUrl(query: string) {
   const encodedQuery = encodeURIComponent(query);
-  const appname = encodeURIComponent("seoul-travel-hub.vercel.app");
+  const appname = encodeURIComponent("https://seoul-travel-hub.vercel.app");
 
   return `nmap://search?query=${encodedQuery}&appname=${appname}`;
 }
 
 function makeAndroidNaverIntent(query: string) {
   const encodedQuery = encodeURIComponent(query);
-  const appname = encodeURIComponent("seoul-travel-hub.vercel.app");
+  const appname = encodeURIComponent("https://seoul-travel-hub.vercel.app");
 
   return `intent://search?query=${encodedQuery}&appname=${appname}#Intent;scheme=nmap;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.nhn.android.nmap;end`;
 }
