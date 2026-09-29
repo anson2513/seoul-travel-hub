@@ -6,12 +6,14 @@ import {
   ArrowUpDown,
   Building2,
   CalendarDays,
+  Check,
   ChevronRight,
   Clock,
   Copy,
   Edit3,
-  ExternalLink,
+  Heart,
   Lightbulb,
+  Map,
   MapPin,
   Navigation,
   Plus,
@@ -23,9 +25,16 @@ import {
 import { type ChangeEvent, type FormEvent, useEffect, useState } from "react";
 import BottomNav from "@/components/dashboard/BottomNav";
 import {
+  RecheckBadge,
+  TimePriorityBadge,
+} from "@/components/itinerary/ItineraryBadges";
+import {
   categoryLabels,
   defaultItineraryDays,
+  getDefaultHotelInfo,
+  hotelStorageKey,
   itineraryStorageKey,
+  legacyItineraryStorageKey,
   type ItineraryCategory,
   type ItineraryDay,
   type ItineraryItem,
@@ -62,23 +71,31 @@ type NearbyFoodCategory = {
 
 const categoryTone: Record<ItineraryCategory, string> = {
   flight: "bg-orange-50 text-orange-700",
+  airport: "bg-orange-50 text-orange-700",
   transit: "bg-blue-50 text-blue-700",
   hotel: "bg-violet-50 text-violet-700",
   food: "bg-amber-50 text-amber-700",
   photo: "bg-emerald-50 text-emerald-700",
   cafe: "bg-stone-100 text-stone-700",
   shopping: "bg-pink-50 text-pink-700",
+  pharmacy: "bg-rose-50 text-rose-700",
+  attraction: "bg-cyan-50 text-cyan-700",
+  market: "bg-lime-50 text-lime-800",
   rest: "bg-neutral-100 text-neutral-600",
 };
 
 const categoryAccent: Record<ItineraryCategory, string> = {
   flight: "from-orange-200 to-sky-200",
+  airport: "from-orange-200 to-sky-200",
   transit: "from-sky-200 to-blue-100",
   hotel: "from-violet-200 to-stone-100",
   food: "from-amber-200 to-orange-100",
   photo: "from-emerald-200 to-sky-100",
   cafe: "from-stone-200 to-amber-100",
   shopping: "from-pink-200 to-orange-100",
+  pharmacy: "from-rose-200 to-red-100",
+  attraction: "from-cyan-200 to-emerald-100",
+  market: "from-lime-200 to-amber-100",
   rest: "from-neutral-200 to-stone-100",
 };
 
@@ -99,15 +116,7 @@ const emptyForm: ItineraryFormState = {
 
 const maxImageSide = 1200;
 const imageQuality = 0.82;
-const airportRailroadImage = "/images/arex-train.jpg";
-const kaohsiungAirportImage =
-  "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=900&auto=format&fit=crop";
-const hotelStorageKey = "seoul-travel-hub-hotels-v1";
-const defaultHotelInfo: HotelInfo = {
-  name: "弘大住宿",
-  address: "弘大入口站周邊",
-  naverQuery: "홍대입구역",
-};
+const defaultHotelInfo: HotelInfo = getDefaultHotelInfo();
 const nearbyFoodCategories: NearbyFoodCategory[] = [
   { label: "早餐", description: "早晨營業", query: "아침식사" },
   { label: "正餐", description: "人氣餐廳", query: "맛집" },
@@ -152,59 +161,36 @@ function readStoredHotels(): HotelsByDay {
   }
 }
 
-function applyItineraryMigrations(days: ItineraryDay[]) {
-  return days.map((day) => ({
-    ...day,
-    items: day.items.map((item) => {
-      if (item.id === "d1-arex-hongdae") {
-        return {
-          ...item,
-          title: "前往飯店",
-          details: [
-            "搭乘機場鐵道 AREX",
-            "從金浦機場前往弘大入口站",
-            "抵達後先前往飯店",
-          ],
-          image: airportRailroadImage,
-        };
-      }
-
-      if (item.id === "d6-gmp-transit") {
-        return {
-          ...item,
-          image: airportRailroadImage,
-        };
-      }
-
-      if (item.id === "d6-arrive-khh") {
-        return {
-          ...item,
-          title: "抵達小港機場",
-          details: ["22:00 左右抵達小港機場", "領行李與返家"],
-          image: kaohsiungAirportImage,
-        };
-      }
-
-      return item;
-    }),
-  }));
-}
-
 function readStoredDays() {
-  if (typeof window === "undefined") {
-    return applyItineraryMigrations(defaultItineraryDays);
-  }
+  if (typeof window === "undefined") return defaultItineraryDays;
 
   try {
     const raw = window.localStorage.getItem(itineraryStorageKey);
-    if (!raw) return applyItineraryMigrations(defaultItineraryDays);
+    if (raw) {
+      const parsed = JSON.parse(raw) as ItineraryDay[];
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
 
-    const parsed = JSON.parse(raw) as ItineraryDay[];
-    return Array.isArray(parsed) && parsed.length > 0
-      ? applyItineraryMigrations(parsed)
-      : applyItineraryMigrations(defaultItineraryDays);
+    // Final Master Data replaces the old seed while retaining user-created rows.
+    const legacyRaw = window.localStorage.getItem(legacyItineraryStorageKey);
+    if (!legacyRaw) return defaultItineraryDays;
+    const legacyDays = JSON.parse(legacyRaw) as ItineraryDay[];
+    if (!Array.isArray(legacyDays)) return defaultItineraryDays;
+
+    return defaultItineraryDays.map((day) => {
+      const legacyDay = legacyDays.find(
+        (candidate) => candidate.date === day.date || candidate.isoDate === day.isoDate,
+      );
+      const customItems = (legacyDay?.items ?? [])
+        .filter((item) => item.id.startsWith("custom-"))
+        .map((item) => ({ ...item, isCustom: true }));
+
+      return customItems.length
+        ? { ...day, items: [...day.items, ...customItems] }
+        : day;
+    });
   } catch {
-    return applyItineraryMigrations(defaultItineraryDays);
+    return defaultItineraryDays;
   }
 }
 
@@ -340,7 +326,8 @@ function itemToForm(item: ItineraryItem, dayId: string): ItineraryFormState {
 
 function insertItemByStartTime(items: ItineraryItem[], nextItem: ItineraryItem) {
   const insertAt = items.findIndex(
-    (item) => item.startTime.localeCompare(nextItem.startTime) > 0,
+    (item) =>
+      (item.startTime || "99:99").localeCompare(nextItem.startTime || "99:99") > 0,
   );
 
   if (insertAt === -1) return [...items, nextItem];
@@ -367,6 +354,11 @@ function makeAndroidNaverIntent(query: string) {
 function openNaverMap(item: ItineraryItem) {
   const query = item.naverQuery || item.address || item.location || item.title;
   openNaverSearch(query);
+}
+
+function openKakaoMap(item: ItineraryItem) {
+  const query = item.naverQuery || item.address || item.location || item.title;
+  window.location.href = `https://map.kakao.com/link/search/${encodeURIComponent(query)}`;
 }
 
 function openNaverSearch(query: string) {
@@ -539,8 +531,12 @@ export default function ItineraryClient() {
 
     const startTime = normalizeTime(formState.startTime) || "09:00";
     const endTime = normalizeTime(formState.endTime);
+    const existingItem = formItemId
+      ? days.flatMap((day) => day.items).find((item) => item.id === formItemId)
+      : undefined;
 
     const nextItem: ItineraryItem = {
+      ...existingItem,
       id: formItemId ?? `custom-${Date.now()}`,
       startTime,
       endTime: endTime || undefined,
@@ -557,6 +553,7 @@ export default function ItineraryClient() {
       details: normalizeLines(formState.details),
       tips: normalizeLines(formState.tips),
       image: formState.image || undefined,
+      isCustom: existingItem?.isCustom ?? !formItemId,
     };
 
     const targetDayId = days.some((day) => day.id === formState.dayId)
@@ -629,6 +626,20 @@ export default function ItineraryClient() {
     }
   }
 
+  function toggleItemState(itemId: string, field: "completed" | "favorite") {
+    setDays((currentDays) =>
+      currentDays.map((day) => ({
+        ...day,
+        items: day.items.map((item) =>
+          item.id === itemId ? { ...item, [field]: !item[field] } : item,
+        ),
+      })),
+    );
+    setSelectedItem((item) =>
+      item?.id === itemId ? { ...item, [field]: !item[field] } : item,
+    );
+  }
+
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#F7F5F2]">
       <div className="mx-auto max-w-[430px] px-5 pb-36 pt-10">
@@ -679,6 +690,30 @@ export default function ItineraryClient() {
             );
           })}
         </div>
+
+        <section className="mt-4 rounded-[22px] border border-neutral-200 bg-white p-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-neutral-950 text-white">
+              <CalendarDays size={21} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-neutral-950">
+                {activeDay.date} ({activeDay.weekday})
+              </p>
+              <h2 className="mt-1 text-lg font-bold leading-snug text-neutral-950">
+                {activeDay.title}
+              </h2>
+              <p className="mt-1 text-sm font-semibold leading-relaxed text-neutral-500">
+                {activeDay.theme}
+              </p>
+            </div>
+          </div>
+          {activeDay.notes?.length ? (
+            <div className="mt-3 rounded-xl bg-amber-50 px-3 py-2.5 text-xs font-bold leading-relaxed text-amber-900">
+              {activeDay.notes.join(" ")}
+            </div>
+          ) : null}
+        </section>
 
         <section className="mt-4 rounded-[22px] border border-neutral-200 bg-white p-4 shadow-sm">
           <div className="flex items-start gap-3">
@@ -774,7 +809,7 @@ export default function ItineraryClient() {
                 type="button"
               >
                 <p className="text-center text-[13px] font-bold tabular-nums text-neutral-950">
-                  {item.startTime}
+                  {item.startTime || "彈性"}
                 </p>
                 {index > 0 && (
                   <span className="absolute left-1/2 top-0 h-[66px] w-px -translate-x-1/2 bg-neutral-200" />
@@ -822,7 +857,13 @@ export default function ItineraryClient() {
                     type="button"
                   >
                     <div className="flex items-start gap-2">
-                      <h2 className="min-w-0 flex-1 text-xl font-bold leading-tight text-neutral-950">
+                      <h2
+                        className={`min-w-0 flex-1 text-xl font-bold leading-tight ${
+                          item.completed
+                            ? "text-neutral-400 line-through"
+                            : "text-neutral-950"
+                        }`}
+                      >
                         {item.title}
                       </h2>
                       <span
@@ -832,27 +873,70 @@ export default function ItineraryClient() {
                       </span>
                     </div>
 
-                    <p className="mt-3 flex items-start gap-2 text-sm font-semibold leading-snug text-neutral-500">
-                      <MapPin className="mt-0.5 shrink-0" size={15} />
-                      <span>{item.location}</span>
-                    </p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <TimePriorityBadge priority={item.timePriority} />
+                      {item.requiresRecheck ? <RecheckBadge /> : null}
+                    </div>
+
+                    {item.nameKo ? (
+                      <p className="mt-2 text-sm font-bold text-neutral-700">
+                        {item.nameKo}
+                      </p>
+                    ) : null}
                     <p className="mt-2 flex items-start gap-2 text-sm font-semibold leading-snug text-neutral-500">
+                      <MapPin className="mt-0.5 shrink-0" size={15} />
+                      <span>{item.address}</span>
+                    </p>
+                    <p className="mt-2 line-clamp-2 flex items-start gap-2 text-sm font-semibold leading-snug text-neutral-500">
                       <Clock className="mt-0.5 shrink-0" size={15} />
                       <span>{item.note}</span>
                     </p>
                   </button>
 
-                  <div className="mt-3 flex items-center justify-between gap-2">
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
                     <button
-                      className="rounded-xl border border-neutral-200 px-3 py-2 text-xs font-bold text-neutral-950"
+                      aria-label="NAVER 導航"
+                      className="rounded-xl border border-neutral-200 px-2.5 py-2 text-[11px] font-bold text-neutral-950"
                       onClick={() => openNaverMap(item)}
                       type="button"
                     >
-                      NAVER 導航
+                      NAVER
+                    </button>
+                    <button
+                      aria-label="Kakao Map 導航"
+                      className="rounded-xl border border-neutral-200 px-2.5 py-2 text-[11px] font-bold text-neutral-950"
+                      onClick={() => openKakaoMap(item)}
+                      type="button"
+                    >
+                      KAKAO
+                    </button>
+                    <button
+                      aria-label={item.favorite ? "取消收藏" : "收藏"}
+                      className={`grid h-8 w-8 place-items-center rounded-xl border ${
+                        item.favorite
+                          ? "border-rose-200 bg-rose-50 text-rose-600"
+                          : "border-neutral-200 text-neutral-500"
+                      }`}
+                      onClick={() => toggleItemState(item.id, "favorite")}
+                      type="button"
+                    >
+                      <Heart fill={item.favorite ? "currentColor" : "none"} size={15} />
+                    </button>
+                    <button
+                      aria-label={item.completed ? "取消完成" : "標示完成"}
+                      className={`grid h-8 w-8 place-items-center rounded-xl border ${
+                        item.completed
+                          ? "border-neutral-950 bg-neutral-950 text-white"
+                          : "border-neutral-200 text-neutral-500"
+                      }`}
+                      onClick={() => toggleItemState(item.id, "completed")}
+                      type="button"
+                    >
+                      <Check size={16} />
                     </button>
 
                     {isEditMode && (
-                      <div className="flex gap-2">
+                      <div className="ml-auto flex gap-2">
                         <button
                           aria-label="往上移動"
                           className="grid h-9 w-9 place-items-center rounded-xl border border-neutral-200"
@@ -1071,6 +1155,11 @@ export default function ItineraryClient() {
                 <h2 className="text-2xl font-bold leading-tight text-neutral-950">
                   {selectedItem.title}
                 </h2>
+                {selectedItem.nameKo ? (
+                  <p className="mt-1 text-sm font-bold text-neutral-600">
+                    {selectedItem.nameKo}
+                  </p>
+                ) : null}
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <span
                     className={`rounded-full px-2.5 py-1 text-xs font-bold ${categoryTone[selectedItem.category]}`}
@@ -1078,33 +1167,81 @@ export default function ItineraryClient() {
                     {categoryLabels[selectedItem.category]}
                   </span>
                   <span className="text-sm font-semibold text-neutral-500">
-                    {selectedItem.startTime}
+                    {selectedItem.startTime || "彈性時間"}
                     {selectedItem.endTime ? ` - ${selectedItem.endTime}` : ""}
                   </span>
+                  <TimePriorityBadge priority={selectedItem.timePriority} />
+                  {selectedItem.requiresRecheck ? <RecheckBadge /> : null}
                 </div>
                 <p className="mt-2 text-sm font-semibold text-neutral-500">
                   {selectedItem.address}
                 </p>
+                {selectedItem.nearestStation ? (
+                  <p className="mt-1 text-xs font-semibold text-neutral-500">
+                    {selectedItem.nearestStation}
+                    {selectedItem.exit ? ` · ${selectedItem.exit} 號出口` : ""}
+                    {selectedItem.walkMinutes
+                      ? ` · 步行 ${selectedItem.walkMinutes} 分鐘`
+                      : ""}
+                  </p>
+                ) : null}
               </div>
             </div>
 
-            <div className="mt-5 grid grid-cols-2 gap-3">
+            <div className="mt-5 grid grid-cols-3 gap-2">
               <button
-                className="flex h-12 items-center justify-center gap-2 rounded-xl border border-neutral-200 text-sm font-bold text-neutral-950"
+                className="flex h-12 items-center justify-center gap-1.5 rounded-xl border border-neutral-200 text-xs font-bold text-neutral-950"
                 onClick={() => openNaverMap(selectedItem)}
                 type="button"
               >
                 <Navigation size={17} />
-                NAVER 導航
-                <ExternalLink size={15} />
+                NAVER
               </button>
               <button
-                className="flex h-12 items-center justify-center gap-2 rounded-xl border border-neutral-200 text-sm font-bold text-neutral-950"
+                className="flex h-12 items-center justify-center gap-1.5 rounded-xl border border-neutral-200 text-xs font-bold text-neutral-950"
+                onClick={() => openKakaoMap(selectedItem)}
+                type="button"
+              >
+                <Map size={17} />
+                KAKAO
+              </button>
+              <button
+                className="flex h-12 items-center justify-center gap-1.5 rounded-xl border border-neutral-200 text-xs font-bold text-neutral-950"
                 onClick={() => copyAddress(selectedItem)}
                 type="button"
               >
                 <Copy size={17} />
-                複製地址
+                地址
+              </button>
+            </div>
+
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <button
+                className={`flex h-11 items-center justify-center gap-2 rounded-xl font-bold ${
+                  selectedItem.favorite
+                    ? "bg-rose-50 text-rose-700"
+                    : "bg-neutral-100 text-neutral-700"
+                }`}
+                onClick={() => toggleItemState(selectedItem.id, "favorite")}
+                type="button"
+              >
+                <Heart
+                  fill={selectedItem.favorite ? "currentColor" : "none"}
+                  size={17}
+                />
+                {selectedItem.favorite ? "已收藏" : "加入收藏"}
+              </button>
+              <button
+                className={`flex h-11 items-center justify-center gap-2 rounded-xl font-bold ${
+                  selectedItem.completed
+                    ? "bg-neutral-950 text-white"
+                    : "bg-neutral-100 text-neutral-700"
+                }`}
+                onClick={() => toggleItemState(selectedItem.id, "completed")}
+                type="button"
+              >
+                <Check size={18} />
+                {selectedItem.completed ? "已完成" : "標示完成"}
               </button>
             </div>
 
@@ -1112,7 +1249,7 @@ export default function ItineraryClient() {
               <div className="border-b border-neutral-100 p-4">
                 <h3 className="flex items-center gap-2 text-base font-bold text-neutral-950">
                   <Clock size={18} />
-                  注意事項
+                  行程資訊
                 </h3>
                 <ul className="mt-3 space-y-2 text-sm font-semibold leading-relaxed text-neutral-500">
                   {(selectedItem.details.length ? selectedItem.details : [selectedItem.note]).map(
@@ -1126,7 +1263,7 @@ export default function ItineraryClient() {
               <div className="p-4">
                 <h3 className="flex items-center gap-2 text-base font-bold text-neutral-950">
                   <Lightbulb size={18} />
-                  小貼士
+                  注意事項
                 </h3>
                 <ul className="mt-3 space-y-2 text-sm font-semibold leading-relaxed text-neutral-500">
                   {(selectedItem.tips.length ? selectedItem.tips : ["可依體力與天氣彈性調整。"]).map(

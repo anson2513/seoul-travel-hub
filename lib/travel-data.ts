@@ -15,12 +15,12 @@ export type SchedulePreviewItem = {
   time: string;
   title: string;
   subtitle: string;
-  image: string;
+  image?: string;
 };
 
 export const tripDates = {
-  start: "2026-10-10",
-  end: "2026-10-15",
+  start: seoul2026Trip.startDate,
+  end: seoul2026Trip.endDate,
   display: "10.10 - 10.15",
 };
 
@@ -51,36 +51,14 @@ export const flights: FlightInfo[] = [
   },
 ];
 
-export const todaySchedulePreview: SchedulePreviewItem[] = [
-  {
-    time: "09:00",
-    title: "早餐",
-    subtitle: "弘大 Cafe Layered",
-    image:
-      "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=800&auto=format&fit=crop",
-  },
-  {
-    time: "10:30",
-    title: "景福宮",
-    subtitle: "Gyeongbokgung Palace",
-    image:
-      "https://images.unsplash.com/photo-1599571234909-29ed5d1321d6?q=80&w=800&auto=format&fit=crop",
-  },
-  {
-    time: "13:00",
-    title: "土俗村蔘雞湯",
-    subtitle: "Tosokchon Samgyetang",
-    image:
-      "https://images.unsplash.com/photo-1547592180-85f173990554?q=80&w=800&auto=format&fit=crop",
-  },
-  {
-    time: "15:30",
-    title: "北村韓屋村",
-    subtitle: "Bukchon Hanok Village",
-    image:
-      "https://images.unsplash.com/photo-1517154421773-0529f29ea451?q=80&w=800&auto=format&fit=crop",
-  },
-];
+export function getTodaySchedulePreview(date = new Date()): SchedulePreviewItem[] {
+  return getDashboardDay(date).places.slice(0, 4).map((item) => ({
+    time: item.startTime ?? "彈性",
+    title: item.nameZh,
+    subtitle: item.nameKo ?? item.addressKo ?? item.area ?? "首爾",
+    image: item.imageUrl ?? undefined,
+  }));
+}
 
 export const emergencyContacts = [
   {
@@ -102,3 +80,4 @@ export const emergencyContacts = [
     tone: "dark",
   },
 ] as const;
+import { getDashboardDay, seoul2026Trip } from "@/lib/seoul-2026-master";

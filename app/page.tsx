@@ -3,8 +3,9 @@ import TravelInfoCard from "@/components/dashboard/TravelInfoCard";
 import TodaySchedule from "@/components/dashboard/TodaySchedule";
 import EmergencyCard from "@/components/dashboard/EmergencyCard";
 import BottomNav from "@/components/dashboard/BottomNav";
+import TripStatusCard from "@/components/dashboard/TripStatusCard";
 import { getSeoulWeather, getTwdKrwRate } from "@/lib/live-info";
-import { flights, todaySchedulePreview } from "@/lib/travel-data";
+import { flights, getTodaySchedulePreview } from "@/lib/travel-data";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export default async function Home() {
     getSeoulWeather(),
     getTwdKrwRate(),
   ]);
+  const todaySchedulePreview = getTodaySchedulePreview();
 
   return (
     <main className="min-h-screen bg-[#F7F5F2]">
@@ -25,6 +27,10 @@ export default async function Home() {
             flights={flights}
             weather={weather}
           />
+        </div>
+
+        <div className="mt-4 px-4">
+          <TripStatusCard />
         </div>
 
         <div className="mt-4 px-4">

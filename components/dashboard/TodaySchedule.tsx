@@ -58,12 +58,18 @@ export default function TodaySchedule({ items }: TodayScheduleProps) {
               </p>
             </div>
 
-            <div
-              aria-label={item.title}
-              className="h-16 w-24 shrink-0 rounded-xl bg-neutral-100 bg-cover bg-center"
-              role="img"
-              style={{ backgroundImage: `url(${item.image})` }}
-            />
+            {item.image ? (
+              <div
+                aria-label={item.title}
+                className="h-16 w-24 shrink-0 rounded-xl bg-neutral-100 bg-cover bg-center"
+                role="img"
+                style={{ backgroundImage: `url(${item.image})` }}
+              />
+            ) : (
+              <div className="grid h-16 w-24 shrink-0 place-items-center rounded-xl bg-neutral-100 text-lg font-bold text-neutral-500">
+                {item.title.slice(0, 1)}
+              </div>
+            )}
           </Link>
         ))}
       </div>

@@ -3,6 +3,20 @@
 Date: 2026-06-26
 Status: Home, Itinerary, Accounting, Photo Map, Splash Screen, and PWA install settings are pushed to GitHub/Vercel.
 
+## Final Master Data Update (2026-09-29)
+
+The itinerary now uses the approved `Seoul / Suwon 2026` Final Master Data as its single source of truth.
+
+- Master data: `lib/seoul-2026-master.ts`
+- UI adapter and local-storage schema: `lib/itinerary-data.ts`
+- Trip days are now `DAY 0` through `DAY 5` for `2026-10-10` through `2026-10-15`.
+- The approved itinerary contains 41 unique places/checkpoints.
+- Existing `v2` seed data is not restored. Only locally created `custom-*` itinerary rows are carried into the new `v3` store.
+- Hotel defaults are reset to Kotaro House using a versioned storage key.
+- Home schedule and trip status now read from the same master data as the itinerary page.
+- Itinerary supports HARD/RECOMMENDED/FLEXIBLE labels, recheck warnings, completed/favorite state, and both NAVER and Kakao search navigation.
+- Latitude, longitude, provider place IDs, and unknown booking URLs remain null; they were not fabricated.
+
 ## Repository
 
 GitHub:
