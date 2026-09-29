@@ -563,7 +563,7 @@ export const seoul2026Trip: SeoulTrip = {
           nameZh: "水剌醬蟹",
           nameKo: "수라게장",
           addressKo: "서울 중구 명동10길 18 2층",
-          navigationKeyword: "수라게장 명동본점",
+          navigationKeyword: "수라게장",
           startTime: "11:30",
           endTime: "12:30",
           openingHours: { open: "10:00", close: "24:00" },
