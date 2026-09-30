@@ -1,3 +1,11 @@
+import {
+  outdoorWeatherPlaceIdSet,
+  type OutdoorWeatherResponse,
+  type OutdoorWeatherRisk,
+  type OutdoorWeatherTarget,
+} from "@/lib/itinerary-weather";
+import { seoul2026Trip } from "@/lib/seoul-2026-master";
+
 export type WeatherInfo = {
   source: "OpenWeather" | "Open-Meteo";
   location: string;
@@ -45,6 +53,16 @@ type OpenMeteoForecast = {
   };
 };
 
+type OpenMeteoItineraryForecast = {
+  hourly?: {
+    time?: string[];
+    precipitation_probability?: Array<number | null>;
+    weather_code?: Array<number | null>;
+    wind_speed_10m?: Array<number | null>;
+    wind_gusts_10m?: Array<number | null>;
+  };
+};
+
 type ExchangeRateResponse = {
   rates?: {
     KRW?: number;
@@ -60,12 +78,12 @@ const seoul = {
   longitude: 126.978,
 };
 
-function formatNow() {
+function formatNow(timeZone = "Asia/Taipei") {
   return new Intl.DateTimeFormat("zh-TW", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-    timeZone: "Asia/Taipei",
+    timeZone,
   }).format(new Date());
 }
 
@@ -81,6 +99,39 @@ function fetchCacheOptions(revalidateSeconds: number, refresh?: boolean) {
 
 function timeoutSignal() {
   return AbortSignal.timeout(3500);
+}
+
+function maxNumber(values: Array<number | null | undefined>) {
+  const numbers = values.filter(
+    (value): value is number => typeof value === "number",
+  );
+  return numbers.length ? Math.round(Math.max(...numbers)) : null;
+}
+
+function timeToMinutes(value: string) {
+  const [hours, minutes] = value.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function hourOverlapsVisit(
+  forecastTime: string,
+  startTime: string,
+  endTime: string,
+) {
+  const hour = forecastTime.slice(11, 16);
+  const hourStart = timeToMinutes(hour);
+  const visitStart = timeToMinutes(startTime);
+  const visitEnd = timeToMinutes(endTime);
+  return hourStart < visitEnd && hourStart + 60 > visitStart;
+}
+
+function isRainCode(code: number | null | undefined) {
+  return typeof code === "number" &&
+    ((code >= 51 && code <= 67) || (code >= 80 && code <= 82));
+}
+
+function isThunderstormCode(code: number | null | undefined) {
+  return typeof code === "number" && code >= 95 && code <= 99;
 }
 
 function openWeatherIcon(icon?: string) {
@@ -224,6 +275,114 @@ export async function getSeoulWeather(
       updatedAt: formatNow(),
     };
   }
+}
+
+export async function getSeoulOutdoorWeather(): Promise<OutdoorWeatherResponse> {
+  const params = new URLSearchParams({
+    latitude: String(seoul.latitude),
+    longitude: String(seoul.longitude),
+    hourly:
+      "precipitation_probability,weather_code,wind_speed_10m,wind_gusts_10m",
+    timezone: "Asia/Seoul",
+    forecast_days: "16",
+  });
+
+  const response = await fetch(
+    `https://api.open-meteo.com/v1/forecast?${params.toString()}`,
+    {
+      cache: "no-store",
+      signal: AbortSignal.timeout(6000),
+    },
+  );
+
+  if (!response.ok) throw new Error("Outdoor weather request failed");
+
+  const data = (await response.json()) as OpenMeteoItineraryForecast;
+  const hourly = data.hourly;
+  const times = hourly?.time ?? [];
+
+  const targets: OutdoorWeatherTarget[] = seoul2026Trip.days.flatMap((day) =>
+    day.places
+      .filter((place) => outdoorWeatherPlaceIdSet.has(place.id))
+      .map((place) => {
+        const startTime = place.startTime ?? "09:00";
+        const endTime = place.endTime ?? "10:00";
+        const indices = times.flatMap((time, index) =>
+          time.startsWith(`${day.date}T`) &&
+          hourOverlapsVisit(time, startTime, endTime)
+            ? [index]
+            : [],
+        );
+
+        if (!indices.length) {
+          return {
+            itemId: place.id,
+            title: place.nameZh,
+            date: day.date,
+            startTime,
+            endTime,
+            status: "unavailable",
+            severity: "safe",
+            rainChance: null,
+            maxWindSpeed: null,
+            maxWindGust: null,
+            risks: [],
+            backupPlan: place.backupPlan,
+          } satisfies OutdoorWeatherTarget;
+        }
+
+        const rainChance = maxNumber(
+          indices.map((index) => hourly?.precipitation_probability?.[index]),
+        );
+        const maxWindSpeed = maxNumber(
+          indices.map((index) => hourly?.wind_speed_10m?.[index]),
+        );
+        const maxWindGust = maxNumber(
+          indices.map((index) => hourly?.wind_gusts_10m?.[index]),
+        );
+        const weatherCodes = indices.map(
+          (index) => hourly?.weather_code?.[index],
+        );
+        const risks: OutdoorWeatherRisk[] = [];
+
+        if (weatherCodes.some(isThunderstormCode)) {
+          risks.push({ type: "thunderstorm", label: "可能有雷雨" });
+        }
+        if (weatherCodes.some(isRainCode) || (rainChance ?? 0) >= 50) {
+          risks.push({
+            type: "rain",
+            label: `降雨機率最高 ${rainChance ?? 0}%`,
+          });
+        }
+        if ((maxWindSpeed ?? 0) >= 35 || (maxWindGust ?? 0) >= 50) {
+          risks.push({
+            type: "strong_wind",
+            label: `陣風最高 ${maxWindGust ?? maxWindSpeed ?? 0} km/h`,
+          });
+        }
+
+        return {
+          itemId: place.id,
+          title: place.nameZh,
+          date: day.date,
+          startTime,
+          endTime,
+          status: "available",
+          severity: risks.length ? "warning" : "safe",
+          rainChance,
+          maxWindSpeed,
+          maxWindGust,
+          risks,
+          backupPlan: place.backupPlan,
+        } satisfies OutdoorWeatherTarget;
+      }),
+  );
+
+  return {
+    source: "Open-Meteo",
+    updatedAt: formatNow("Asia/Seoul"),
+    targets,
+  };
 }
 
 export async function getTwdKrwRate(

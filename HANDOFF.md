@@ -86,6 +86,10 @@ Completed and deployed as V1.
 - Each day now stores its own hotel information locally, so changing the DAY 5 hotel does not change other days.
 - The itinerary page includes a lightweight `飯店附近美食` panel with breakfast, meal, cafe, late-night, and 24-hour NAVER Map searches based on the active day's hotel.
 - The nearby-food panel can open a prefilled restaurant itinerary form for the active day.
+- Outdoor weather is automatically linked to the five Final Master Data targets: Haneul Park, 63 SkyPicnic, Bukchon, N Seoul Tower, and Cheonggyecheon.
+- The itinerary weather API uses Open-Meteo's 16-day hourly forecast and evaluates each target's actual visit window for rain, strong wind, and thunderstorms.
+- Day summaries, itinerary cards, and detail panels display synchronized weather warnings. 63 SkyPicnic also shows the indoor observatory backup plan when weather risk is detected.
+- Weather refreshes on page load, every 15 minutes, when the app returns to the foreground, and from the manual refresh button.
 - NAVER Map navigation is used for itinerary navigation.
 - Detail panel includes notes, tips, NAVER navigation, and copy address.
 - NAVER navigation no longer auto-falls back to the App Store. It only attempts to open the installed NAVER Map app.

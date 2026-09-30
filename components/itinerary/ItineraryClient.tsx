@@ -22,12 +22,23 @@ import {
   Utensils,
   X,
 } from "lucide-react";
-import { type ChangeEvent, type FormEvent, useEffect, useState } from "react";
+import {
+  type ChangeEvent,
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import BottomNav from "@/components/dashboard/BottomNav";
 import {
   RecheckBadge,
   TimePriorityBadge,
 } from "@/components/itinerary/ItineraryBadges";
+import OutdoorWeatherAlert, {
+  OutdoorWeatherBadge,
+  OutdoorWeatherDetail,
+  type OutdoorWeatherStatus,
+} from "@/components/itinerary/OutdoorWeatherAlert";
 import {
   categoryLabels,
   defaultItineraryDays,
@@ -39,6 +50,11 @@ import {
   type ItineraryDay,
   type ItineraryItem,
 } from "@/lib/itinerary-data";
+import {
+  outdoorWeatherPlaceIdSet,
+  type OutdoorWeatherResponse,
+  type OutdoorWeatherTarget,
+} from "@/lib/itinerary-weather";
 
 type ItineraryFormState = {
   dayId: string;
@@ -408,9 +424,47 @@ export default function ItineraryClient() {
   const [isHotelFormOpen, setIsHotelFormOpen] = useState(false);
   const [formState, setFormState] = useState<ItineraryFormState>(emptyForm);
   const [hasHydrated, setHasHydrated] = useState(false);
+  const [outdoorWeather, setOutdoorWeather] =
+    useState<OutdoorWeatherResponse | null>(null);
+  const [outdoorWeatherStatus, setOutdoorWeatherStatus] =
+    useState<OutdoorWeatherStatus>("loading");
 
   const activeDay = days.find((day) => day.id === activeDayId) ?? days[0];
   const activeHotel = hotelsByDay[activeDayId] ?? defaultHotelInfo;
+  const weatherByItemId: Record<string, OutdoorWeatherTarget> =
+    Object.fromEntries(
+      (outdoorWeather?.targets ?? []).map((target) => [target.itemId, target]),
+    );
+  const activeMonitoredItems = activeDay.items.filter((item) =>
+    outdoorWeatherPlaceIdSet.has(item.id),
+  );
+  const activeOutdoorTargets = activeMonitoredItems
+    .map((item) => weatherByItemId[item.id])
+    .filter((target): target is OutdoorWeatherTarget => Boolean(target));
+  const selectedOutdoorWeather = selectedItem
+    ? weatherByItemId[selectedItem.id]
+    : undefined;
+
+  const loadOutdoorWeather = useCallback(async () => {
+    setOutdoorWeatherStatus((current) =>
+      current === "ready" || current === "refreshing"
+        ? "refreshing"
+        : "loading",
+    );
+
+    try {
+      const response = await fetch("/api/itinerary-weather", {
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error("Outdoor weather refresh failed");
+
+      const weather = (await response.json()) as OutdoorWeatherResponse;
+      setOutdoorWeather(weather);
+      setOutdoorWeatherStatus("ready");
+    } catch {
+      setOutdoorWeatherStatus("error");
+    }
+  }, []);
 
   useEffect(() => {
     const storedDays = readStoredDays();
@@ -429,6 +483,24 @@ export default function ItineraryClient() {
     if (!hasHydrated) return;
     window.localStorage.setItem(hotelStorageKey, JSON.stringify(hotelsByDay));
   }, [hotelsByDay, hasHydrated]);
+
+  useEffect(() => {
+    void loadOutdoorWeather();
+
+    const refreshTimer = window.setInterval(
+      () => void loadOutdoorWeather(),
+      15 * 60 * 1000,
+    );
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void loadOutdoorWeather();
+    };
+
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.clearInterval(refreshTimer);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [loadOutdoorWeather]);
 
   function moveItem(itemId: string, direction: "up" | "down") {
     setDays((currentDays) =>
@@ -733,6 +805,15 @@ export default function ItineraryClient() {
           ) : null}
         </section>
 
+        <OutdoorWeatherAlert
+          dayLabel={activeDay.label}
+          onRefresh={() => void loadOutdoorWeather()}
+          placeNames={activeMonitoredItems.map((item) => item.title)}
+          status={outdoorWeatherStatus}
+          targets={activeOutdoorTargets}
+          updatedAt={outdoorWeather?.updatedAt}
+        />
+
         <section className="mt-4 rounded-[22px] border border-neutral-200 bg-white p-4 shadow-sm">
           <div className="flex items-start gap-3">
             <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-neutral-100 text-neutral-800">
@@ -894,6 +975,7 @@ export default function ItineraryClient() {
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       <TimePriorityBadge priority={item.timePriority} />
                       {item.requiresRecheck ? <RecheckBadge /> : null}
+                      <OutdoorWeatherBadge target={weatherByItemId[item.id]} />
                     </div>
 
                     {item.nameKo ? (
@@ -1190,6 +1272,7 @@ export default function ItineraryClient() {
                   </span>
                   <TimePriorityBadge priority={selectedItem.timePriority} />
                   {selectedItem.requiresRecheck ? <RecheckBadge /> : null}
+                  <OutdoorWeatherBadge target={selectedOutdoorWeather} />
                 </div>
                 <p className="mt-2 text-sm font-semibold text-neutral-500">
                   {selectedItem.address}
@@ -1262,6 +1345,8 @@ export default function ItineraryClient() {
                 {selectedItem.completed ? "已完成" : "標示完成"}
               </button>
             </div>
+
+            <OutdoorWeatherDetail target={selectedOutdoorWeather} />
 
             <section className="mt-5 overflow-hidden rounded-2xl border border-neutral-200">
               <div className="border-b border-neutral-100 p-4">
