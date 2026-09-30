@@ -8,6 +8,7 @@ import {
   defaultAccountingState,
   expenseCategoryLabels,
   fallbackKrwPerTwd,
+  legacySampleExpenseIds,
   paymentMethodLabels,
   taxFreeThresholdKrw,
   taxStatusLabels,
@@ -79,12 +80,16 @@ function readStoredAccounting() {
     const parsed = JSON.parse(raw) as AccountingState;
     if (!Array.isArray(parsed.expenses)) return defaultAccountingState;
 
+    const legacySamples = new Set(legacySampleExpenseIds);
+
     return {
       budgetTwd:
         typeof parsed.budgetTwd === "number"
           ? parsed.budgetTwd
           : defaultAccountingState.budgetTwd,
-      expenses: parsed.expenses,
+      expenses: parsed.expenses.filter(
+        (expense) => !legacySamples.has(expense.id),
+      ),
     };
   } catch {
     return defaultAccountingState;
