@@ -198,7 +198,11 @@ function readStoredDays() {
 
             const masterItem = masterItems[item.id];
             return masterItem
-              ? { ...item, naverQuery: masterItem.naverQuery }
+              ? {
+                  ...item,
+                  naverQuery: masterItem.naverQuery,
+                  image: masterItem.image ?? item.image,
+                }
               : item;
           }),
         }));
