@@ -269,7 +269,9 @@ function readStoredDays() {
                   naverQuery: masterItem.naverQuery,
                   location: masterItem.location,
                   address: masterItem.address,
-                  image: masterItem.image ?? item.image,
+                  image: item.image?.startsWith("data:")
+                    ? item.image
+                    : masterItem.image ?? item.image,
                 }
               : item;
           }),
@@ -310,7 +312,9 @@ function readStoredDays() {
                       naverQuery: masterItem.naverQuery,
                       location: masterItem.location,
                       address: masterItem.address,
-                      image: masterItem.image ?? item.image,
+                      image: item.image?.startsWith("data:")
+                        ? item.image
+                        : masterItem.image ?? item.image,
                     }
                   : item;
               }),
