@@ -57,6 +57,8 @@ type OpenMeteoItineraryForecast = {
   hourly?: {
     time?: string[];
     precipitation_probability?: Array<number | null>;
+    temperature_2m?: Array<number | null>;
+    apparent_temperature?: Array<number | null>;
     weather_code?: Array<number | null>;
     wind_speed_10m?: Array<number | null>;
     wind_gusts_10m?: Array<number | null>;
@@ -106,6 +108,13 @@ function maxNumber(values: Array<number | null | undefined>) {
     (value): value is number => typeof value === "number",
   );
   return numbers.length ? Math.round(Math.max(...numbers)) : null;
+}
+
+function minNumber(values: Array<number | null | undefined>) {
+  const numbers = values.filter(
+    (value): value is number => typeof value === "number",
+  );
+  return numbers.length ? Math.round(Math.min(...numbers)) : null;
 }
 
 function timeToMinutes(value: string) {
@@ -282,7 +291,7 @@ export async function getSeoulOutdoorWeather(): Promise<OutdoorWeatherResponse> 
     latitude: String(seoul.latitude),
     longitude: String(seoul.longitude),
     hourly:
-      "precipitation_probability,weather_code,wind_speed_10m,wind_gusts_10m",
+      "temperature_2m,apparent_temperature,precipitation_probability,weather_code,wind_speed_10m,wind_gusts_10m",
     timezone: "Asia/Seoul",
     forecast_days: "16",
   });
@@ -323,6 +332,9 @@ export async function getSeoulOutdoorWeather(): Promise<OutdoorWeatherResponse> 
             endTime,
             status: "unavailable",
             severity: "safe",
+            minTemperature: null,
+            maxTemperature: null,
+            minApparentTemperature: null,
             rainChance: null,
             maxWindSpeed: null,
             maxWindGust: null,
@@ -333,6 +345,15 @@ export async function getSeoulOutdoorWeather(): Promise<OutdoorWeatherResponse> 
 
         const rainChance = maxNumber(
           indices.map((index) => hourly?.precipitation_probability?.[index]),
+        );
+        const minTemperature = minNumber(
+          indices.map((index) => hourly?.temperature_2m?.[index]),
+        );
+        const maxTemperature = maxNumber(
+          indices.map((index) => hourly?.temperature_2m?.[index]),
+        );
+        const minApparentTemperature = minNumber(
+          indices.map((index) => hourly?.apparent_temperature?.[index]),
         );
         const maxWindSpeed = maxNumber(
           indices.map((index) => hourly?.wind_speed_10m?.[index]),
@@ -347,6 +368,12 @@ export async function getSeoulOutdoorWeather(): Promise<OutdoorWeatherResponse> 
 
         if (weatherCodes.some(isThunderstormCode)) {
           risks.push({ type: "thunderstorm", label: "可能有雷雨" });
+        }
+        if ((minApparentTemperature ?? minTemperature ?? 99) <= 12) {
+          risks.push({
+            type: "cold",
+            label: `體感最低 ${minApparentTemperature ?? minTemperature}°C，注意保暖`,
+          });
         }
         if (weatherCodes.some(isRainCode) || (rainChance ?? 0) >= 50) {
           risks.push({
@@ -369,6 +396,9 @@ export async function getSeoulOutdoorWeather(): Promise<OutdoorWeatherResponse> 
           endTime,
           status: "available",
           severity: risks.length ? "warning" : "safe",
+          minTemperature,
+          maxTemperature,
+          minApparentTemperature,
           rainChance,
           maxWindSpeed,
           maxWindGust,

@@ -3,6 +3,7 @@ import {
   CloudRain,
   CloudSun,
   RefreshCw,
+  Thermometer,
   TriangleAlert,
   Wind,
 } from "lucide-react";
@@ -24,7 +25,17 @@ type OutdoorWeatherAlertProps = {
 };
 
 function metricSummary(target: OutdoorWeatherTarget) {
+  const temperature =
+    target.minTemperature === null || target.maxTemperature === null
+      ? null
+      : target.minTemperature === target.maxTemperature
+        ? `氣溫 ${target.minTemperature}°C`
+        : `氣溫 ${target.minTemperature}-${target.maxTemperature}°C`;
   const metrics = [
+    temperature,
+    target.minApparentTemperature === null
+      ? null
+      : `體感最低 ${target.minApparentTemperature}°C`,
     target.rainChance === null ? null : `降雨 ${target.rainChance}%`,
     target.maxWindSpeed === null
       ? null
@@ -88,10 +99,13 @@ export function OutdoorWeatherDetail({
         {isWarning ? "戶外天氣警告" : "戶外天氣正常"}
       </h3>
       <p className="mt-2 text-sm font-semibold leading-relaxed text-neutral-600">
-        {isWarning
-          ? target.risks.map((risk) => risk.label).join(" · ")
-          : metricSummary(target)}
+        {metricSummary(target)}
       </p>
+      {isWarning ? (
+        <p className="mt-1 text-sm font-bold leading-relaxed text-red-700">
+          {target.risks.map((risk) => risk.label).join(" · ")}
+        </p>
+      ) : null}
       {isWarning && target.backupPlan ? (
         <p className="mt-2 text-sm font-bold text-red-700">
           備案：{target.backupPlan}
@@ -154,7 +168,7 @@ export default function OutdoorWeatherAlert({
                   ? "尚未進入 16 天預報範圍"
                   : isWarning
                     ? `${warningTargets.length} 個景點需要留意`
-                    : "目前沒有風雨警告"}
+                    : "目前沒有天氣警告"}
           </h2>
           <p className="mt-1 text-xs font-semibold leading-relaxed text-neutral-500">
             {placeNames.join("、")}
@@ -187,7 +201,7 @@ export default function OutdoorWeatherAlert({
 
       {isUnavailable ? (
         <p className="mt-3 rounded-xl bg-neutral-100 px-3 py-2.5 text-xs font-bold leading-relaxed text-neutral-600">
-          接近旅行日期後會自動出現逐時降雨、風速與雷雨警告。
+          接近旅行日期後會自動出現逐時氣溫、體感、降雨與風速預報。
         </p>
       ) : null}
 
@@ -204,6 +218,8 @@ export default function OutdoorWeatherAlert({
                 {target.severity === "warning" ? (
                   target.risks.some((risk) => risk.type === "strong_wind") ? (
                     <Wind className="shrink-0 text-red-600" size={16} />
+                  ) : target.risks.some((risk) => risk.type === "cold") ? (
+                    <Thermometer className="shrink-0 text-red-600" size={16} />
                   ) : (
                     <CloudRain className="shrink-0 text-red-600" size={16} />
                   )
@@ -221,10 +237,13 @@ export default function OutdoorWeatherAlert({
                 </span>
               </div>
               <p className="mt-1 text-xs font-semibold leading-relaxed text-neutral-600">
-                {target.severity === "warning"
-                  ? target.risks.map((risk) => risk.label).join(" · ")
-                  : metricSummary(target)}
+                {metricSummary(target)}
               </p>
+              {target.severity === "warning" ? (
+                <p className="mt-1 text-xs font-bold leading-relaxed text-red-700">
+                  {target.risks.map((risk) => risk.label).join(" · ")}
+                </p>
+              ) : null}
               {target.severity === "warning" && target.backupPlan ? (
                 <p className="mt-1 text-xs font-bold text-red-700">
                   備案：{target.backupPlan}

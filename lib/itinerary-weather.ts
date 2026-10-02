@@ -13,6 +13,7 @@ export const outdoorWeatherPlaceIdSet = new Set<string>(
 
 export type OutdoorWeatherRiskType =
   | "rain"
+  | "cold"
   | "strong_wind"
   | "thunderstorm";
 
@@ -29,6 +30,9 @@ export type OutdoorWeatherTarget = {
   endTime: string;
   status: "available" | "unavailable";
   severity: "safe" | "warning";
+  minTemperature: number | null;
+  maxTemperature: number | null;
+  minApparentTemperature: number | null;
   rainChance: number | null;
   maxWindSpeed: number | null;
   maxWindGust: number | null;
