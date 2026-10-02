@@ -1,5 +1,6 @@
 import {
   outdoorWeatherPlaceIdSet,
+  type OutdoorWeatherDay,
   type OutdoorWeatherResponse,
   type OutdoorWeatherRisk,
   type OutdoorWeatherTarget,
@@ -310,6 +311,40 @@ export async function getSeoulOutdoorWeather(): Promise<OutdoorWeatherResponse> 
   const hourly = data.hourly;
   const times = hourly?.time ?? [];
 
+  const days: OutdoorWeatherDay[] = seoul2026Trip.days.map((day) => {
+    const indices = times.flatMap((time, index) =>
+      time.startsWith(`${day.date}T`) ? [index] : [],
+    );
+
+    if (!indices.length) {
+      return {
+        date: day.date,
+        status: "unavailable",
+        minTemperature: null,
+        maxTemperature: null,
+        minApparentTemperature: null,
+        maxRainChance: null,
+      };
+    }
+
+    return {
+      date: day.date,
+      status: "available",
+      minTemperature: minNumber(
+        indices.map((index) => hourly?.temperature_2m?.[index]),
+      ),
+      maxTemperature: maxNumber(
+        indices.map((index) => hourly?.temperature_2m?.[index]),
+      ),
+      minApparentTemperature: minNumber(
+        indices.map((index) => hourly?.apparent_temperature?.[index]),
+      ),
+      maxRainChance: maxNumber(
+        indices.map((index) => hourly?.precipitation_probability?.[index]),
+      ),
+    };
+  });
+
   const targets: OutdoorWeatherTarget[] = seoul2026Trip.days.flatMap((day) =>
     day.places
       .filter((place) => outdoorWeatherPlaceIdSet.has(place.id))
@@ -411,6 +446,7 @@ export async function getSeoulOutdoorWeather(): Promise<OutdoorWeatherResponse> 
   return {
     source: "Open-Meteo",
     updatedAt: formatNow("Asia/Seoul"),
+    days,
     targets,
   };
 }

@@ -40,8 +40,18 @@ export type OutdoorWeatherTarget = {
   backupPlan?: string;
 };
 
+export type OutdoorWeatherDay = {
+  date: string;
+  status: "available" | "unavailable";
+  minTemperature: number | null;
+  maxTemperature: number | null;
+  minApparentTemperature: number | null;
+  maxRainChance: number | null;
+};
+
 export type OutdoorWeatherResponse = {
   source: "Open-Meteo";
   updatedAt: string;
+  days: OutdoorWeatherDay[];
   targets: OutdoorWeatherTarget[];
 };

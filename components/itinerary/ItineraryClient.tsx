@@ -516,6 +516,9 @@ export default function ItineraryClient() {
   const selectedOutdoorWeather = selectedItem
     ? weatherByItemId[selectedItem.id]
     : undefined;
+  const activeDailyWeather = outdoorWeather?.days?.find(
+    (day) => day.date === activeDay.isoDate,
+  );
 
   const loadOutdoorWeather = useCallback(async () => {
     setOutdoorWeatherStatus((current) =>
@@ -879,6 +882,7 @@ export default function ItineraryClient() {
 
         <OutdoorWeatherAlert
           dayLabel={activeDay.label}
+          dayWeather={activeDailyWeather}
           onRefresh={() => void loadOutdoorWeather()}
           placeNames={activeMonitoredItems.map((item) => item.title)}
           status={outdoorWeatherStatus}

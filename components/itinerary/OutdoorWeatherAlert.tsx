@@ -7,7 +7,10 @@ import {
   TriangleAlert,
   Wind,
 } from "lucide-react";
-import type { OutdoorWeatherTarget } from "@/lib/itinerary-weather";
+import type {
+  OutdoorWeatherDay,
+  OutdoorWeatherTarget,
+} from "@/lib/itinerary-weather";
 
 export type OutdoorWeatherStatus =
   | "loading"
@@ -17,12 +20,21 @@ export type OutdoorWeatherStatus =
 
 type OutdoorWeatherAlertProps = {
   dayLabel: string;
+  dayWeather?: OutdoorWeatherDay;
   placeNames: string[];
   targets: OutdoorWeatherTarget[];
   status: OutdoorWeatherStatus;
   updatedAt?: string;
   onRefresh: () => void;
 };
+
+function clothingAdvice(dayWeather?: OutdoorWeatherDay) {
+  const lowest = dayWeather?.minApparentTemperature ?? dayWeather?.minTemperature;
+  if (lowest === null || lowest === undefined) return null;
+  if (lowest <= 12) return "氣溫偏低，建議帶保暖外套";
+  if (lowest <= 18) return "早晚偏涼，建議帶薄外套";
+  return "整日氣溫舒適，可依個人體感穿著";
+}
 
 function metricSummary(target: OutdoorWeatherTarget) {
   const temperature =
@@ -117,14 +129,13 @@ export function OutdoorWeatherDetail({
 
 export default function OutdoorWeatherAlert({
   dayLabel,
+  dayWeather,
   placeNames,
   targets,
   status,
   updatedAt,
   onRefresh,
 }: OutdoorWeatherAlertProps) {
-  if (!placeNames.length) return null;
-
   const availableTargets = targets.filter(
     (target) => target.status === "available",
   );
@@ -133,8 +144,9 @@ export default function OutdoorWeatherAlert({
   );
   const hasWeather = status === "ready" || status === "refreshing";
   const isUnavailable =
-    hasWeather && !availableTargets.length && targets.length > 0;
+    hasWeather && dayWeather?.status === "unavailable";
   const isWarning = warningTargets.length > 0;
+  const advice = clothingAdvice(dayWeather);
 
   return (
     <section
@@ -157,7 +169,7 @@ export default function OutdoorWeatherAlert({
 
         <div className="min-w-0 flex-1">
           <p className="text-xs font-bold text-neutral-500">
-            {dayLabel} 戶外景點天氣
+            {dayLabel} 整日天氣
           </p>
           <h2 className="mt-0.5 text-base font-bold text-neutral-950">
             {status === "loading"
@@ -171,7 +183,7 @@ export default function OutdoorWeatherAlert({
                     : "目前沒有天氣警告"}
           </h2>
           <p className="mt-1 text-xs font-semibold leading-relaxed text-neutral-500">
-            {placeNames.join("、")}
+            {placeNames.length ? placeNames.join("、") : "首爾整日預報"}
           </p>
         </div>
 
@@ -203,6 +215,32 @@ export default function OutdoorWeatherAlert({
         <p className="mt-3 rounded-xl bg-neutral-100 px-3 py-2.5 text-xs font-bold leading-relaxed text-neutral-600">
           接近旅行日期後會自動出現逐時氣溫、體感、降雨與風速預報。
         </p>
+      ) : null}
+
+      {hasWeather && dayWeather?.status === "available" ? (
+        <div className="mt-3 rounded-2xl bg-neutral-950 px-4 py-4 text-white">
+          <div className="grid grid-cols-2 divide-x divide-white/20">
+            <div className="pr-4">
+              <p className="text-xs font-bold text-white/60">今日最低</p>
+              <p className="mt-1 text-3xl font-bold">
+                {dayWeather.minTemperature ?? "--"}°
+              </p>
+            </div>
+            <div className="pl-4">
+              <p className="text-xs font-bold text-white/60">今日最高</p>
+              <p className="mt-1 text-3xl font-bold">
+                {dayWeather.maxTemperature ?? "--"}°
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-white/15 pt-3 text-xs font-semibold text-white/75">
+            <span>最低體感 {dayWeather.minApparentTemperature ?? "--"}°C</span>
+            <span>最高降雨 {dayWeather.maxRainChance ?? "--"}%</span>
+          </div>
+          {advice ? (
+            <p className="mt-2 text-sm font-bold text-white">{advice}</p>
+          ) : null}
+        </div>
       ) : null}
 
       {hasWeather && availableTargets.length ? (
