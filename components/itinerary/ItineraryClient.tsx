@@ -46,7 +46,7 @@ import {
   hotelStorageKey,
   itineraryStorageKey,
   legacyItineraryStorageKey,
-  previousItineraryStorageKey,
+  previousItineraryStorageKeys,
   type ItineraryCategory,
   type ItineraryDay,
   type ItineraryItem,
@@ -212,9 +212,9 @@ function readStoredDays() {
       }
     }
 
-    const previousRaw = window.localStorage.getItem(
-      previousItineraryStorageKey,
-    );
+    const previousRaw = previousItineraryStorageKeys
+      .map((key) => window.localStorage.getItem(key))
+      .find((value): value is string => Boolean(value));
     if (previousRaw) {
       const previousDays = JSON.parse(previousRaw) as ItineraryDay[];
       if (Array.isArray(previousDays)) {

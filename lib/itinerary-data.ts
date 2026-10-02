@@ -76,9 +76,11 @@ export type ItineraryDay = {
 };
 
 export const itineraryStorageKey =
-  "seoul-travel-hub-itinerary-v4-day1-seed";
-export const previousItineraryStorageKey =
-  "seoul-travel-hub-itinerary-v3-final-master";
+  "seoul-travel-hub-itinerary-v5-day1-dinner";
+export const previousItineraryStorageKeys = [
+  "seoul-travel-hub-itinerary-v4-day1-seed",
+  "seoul-travel-hub-itinerary-v3-final-master",
+];
 export const legacyItineraryStorageKey = "seoul-travel-hub-itinerary-v2";
 export const hotelStorageKey = "seoul-travel-hub-hotels-v3-kotaro-address";
 
@@ -150,6 +152,10 @@ function masterPlaceToItem(item: Place): ItineraryItem {
     item.subwayLines?.length ? `地鐵：${item.subwayLines.join("、")}` : null,
     item.exit ? `出口：${item.exit}` : null,
     item.walkMinutes ? `步行約 ${item.walkMinutes} 分鐘` : null,
+    item.walkingDistanceMeters
+      ? `步行約 ${item.walkingDistanceMeters} 公尺`
+      : null,
+    item.phone ? `電話：${item.phone}` : null,
     ...describeOpeningHours(item.openingHours),
     ...describeTicket(item.ticket),
     joinList("必做", item.mustDo),

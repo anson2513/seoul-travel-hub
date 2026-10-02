@@ -53,6 +53,8 @@ export type Place = {
   subwayLines?: string[];
   exit?: string;
   walkMinutes?: number;
+  walkingDistanceMeters?: number;
+  phone?: string;
   startTime?: string;
   endTime?: string;
   openingHours?: OpeningHours;
@@ -475,14 +477,21 @@ export const seoul2026Trip: SeoulTrip = {
           id: "hongdae-dinner-day1",
           sequence: 12,
           category: "FOOD",
-          nameZh: "弘大晚餐",
-          nameKo: "홍대 맛집",
-          navigationKeyword: "홍대 맛집",
+          nameZh: "元堂馬鈴薯排骨湯 東橋店",
+          nameKo: "원당감자탕 동교점",
+          addressKo: "서울 마포구 홍익로6길 76",
+          navigationKeyword: "원당감자탕 동교점",
           area: "Hongdae",
-          timePriority: "FLEXIBLE",
+          nearestStation: "홍대입구역",
+          exit: "8",
+          walkingDistanceMeters: 145,
+          phone: "02-334-3666",
+          startTime: "22:00",
+          timePriority: "RECOMMENDED",
           mustEat: true,
-          features: ["晚餐"],
-          note: "依當天體力與時間彈性安排。",
+          mustOrder: ["馬鈴薯排骨湯"],
+          features: ["晚餐", "馬鈴薯排骨湯"],
+          note: "DAY 1 東大門購物結束後前往。",
         }),
         place({
           id: "return-kotaro-day1",
