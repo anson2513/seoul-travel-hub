@@ -258,7 +258,14 @@ function readStoredDays() {
 
         return parsed.map((day) => ({
           ...day,
-          items: day.items.map((item) => {
+          items: day.items
+            .filter(
+              (item) =>
+                item.isCustom ||
+                item.id.startsWith("custom-") ||
+                Boolean(masterItems[item.id]),
+            )
+            .map((item) => {
             if (item.isCustom || item.id.startsWith("custom-")) return item;
 
             const masterItem = masterItems[item.id];
@@ -274,7 +281,7 @@ function readStoredDays() {
                     : masterItem.image ?? item.image,
                 }
               : item;
-          }),
+            }),
         }));
       }
     }
