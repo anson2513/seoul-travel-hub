@@ -30,6 +30,7 @@ import {
   useState,
 } from "react";
 import BottomNav from "@/components/dashboard/BottomNav";
+import ItineraryGuideReference from "@/components/itinerary/ItineraryGuideReference";
 import {
   RecheckBadge,
   TimePriorityBadge,
@@ -141,6 +142,41 @@ const nearbyFoodCategories: NearbyFoodCategory[] = [
   { label: "宵夜", description: "深夜用餐", query: "야식" },
   { label: "24 小時", description: "全天營業", query: "24시간 음식점" },
 ];
+const itineraryGuideImages: Record<
+  string,
+  { src: string; width: number; height: number }
+> = {
+  "day-0": {
+    src: "/images/itinerary-guides/day-0.png",
+    width: 1536,
+    height: 1024,
+  },
+  "day-1": {
+    src: "/images/itinerary-guides/day-1.png",
+    width: 1536,
+    height: 1024,
+  },
+  "day-2": {
+    src: "/images/itinerary-guides/day-2.png",
+    width: 1536,
+    height: 1024,
+  },
+  "day-3": {
+    src: "/images/itinerary-guides/day-3.png",
+    width: 1672,
+    height: 941,
+  },
+  "day-4": {
+    src: "/images/itinerary-guides/day-4.png",
+    width: 1672,
+    height: 941,
+  },
+  "day-5": {
+    src: "/images/itinerary-guides/day-5.png",
+    width: 1672,
+    height: 941,
+  },
+};
 const transitDetailPrefixes = [
   "地鐵線別：",
   "上車站：",
@@ -533,6 +569,7 @@ export default function ItineraryClient() {
 
   const activeDay = days.find((day) => day.id === activeDayId) ?? days[0];
   const activeHotel = hotelsByDay[activeDayId] ?? defaultHotelInfo;
+  const activeGuideImage = itineraryGuideImages[activeDayId];
   const weatherByItemId: Record<string, OutdoorWeatherTarget> =
     Object.fromEntries(
       (outdoorWeather?.targets ?? []).map((target) => [target.itemId, target]),
@@ -1178,6 +1215,15 @@ export default function ItineraryClient() {
           <Plus size={22} />
           新增行程
         </button>
+
+        {activeGuideImage ? (
+          <ItineraryGuideReference
+            dayLabel={activeDay.label}
+            height={activeGuideImage.height}
+            src={activeGuideImage.src}
+            width={activeGuideImage.width}
+          />
+        ) : null}
       </div>
 
       <BottomNav />
