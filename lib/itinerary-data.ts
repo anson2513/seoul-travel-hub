@@ -6,6 +6,7 @@ import {
   type TicketInfo,
   type TimePriority,
 } from "@/lib/seoul-2026-master";
+import { transitGuideByPlaceId } from "@/lib/transit-guides";
 
 export type ItineraryCategory =
   | "flight"
@@ -146,8 +147,14 @@ function joinList(label: string, values?: string[]) {
 
 function masterPlaceToItem(item: Place): ItineraryItem {
   const transport = item.transportFromPrevious;
+  const transitGuide = transitGuideByPlaceId[item.id];
   const details = [
     item.nameKo ? `韓文名稱：${item.nameKo}` : null,
+    transitGuide ? `地鐵線別：${transitGuide.line}` : null,
+    transitGuide ? `上車站：${transitGuide.boardingStation}` : null,
+    transitGuide ? `轉乘：${transitGuide.transfer}` : null,
+    transitGuide ? `下車站：${transitGuide.alightingStation}` : null,
+    transitGuide ? `目的地出口：${transitGuide.exit}` : null,
     item.nearestStation ? `最近車站：${item.nearestStation}` : null,
     item.subwayLines?.length ? `地鐵：${item.subwayLines.join("、")}` : null,
     item.exit ? `出口：${item.exit}` : null,

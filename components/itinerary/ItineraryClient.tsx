@@ -141,6 +141,34 @@ const nearbyFoodCategories: NearbyFoodCategory[] = [
   { label: "宵夜", description: "深夜用餐", query: "야식" },
   { label: "24 小時", description: "全天營業", query: "24시간 음식점" },
 ];
+const transitDetailPrefixes = [
+  "地鐵線別：",
+  "上車站：",
+  "轉乘：",
+  "下車站：",
+  "目的地出口：",
+];
+
+function mergeMasterTransitDetails(
+  item: ItineraryItem,
+  masterItem: ItineraryItem,
+) {
+  const savedDetails = (item.details ?? []).filter(
+    (detail) =>
+      !transitDetailPrefixes.some((prefix) => detail.startsWith(prefix)),
+  );
+  const transitDetails = (masterItem.details ?? []).filter((detail) =>
+    transitDetailPrefixes.some((prefix) => detail.startsWith(prefix)),
+  );
+  const koreanName = savedDetails.filter((detail) =>
+    detail.startsWith("韓文名稱："),
+  );
+  const remainingDetails = savedDetails.filter(
+    (detail) => !detail.startsWith("韓文名稱："),
+  );
+
+  return [...koreanName, ...transitDetails, ...remainingDetails];
+}
 
 function makeDefaultHotels(): HotelsByDay {
   return Object.fromEntries(
@@ -201,6 +229,7 @@ function readStoredDays() {
             return masterItem
               ? {
                   ...item,
+                  details: mergeMasterTransitDetails(item, masterItem),
                   naverQuery: masterItem.naverQuery,
                   location: masterItem.location,
                   address: masterItem.address,
@@ -241,6 +270,7 @@ function readStoredDays() {
                 return masterItem
                   ? {
                       ...item,
+                      details: mergeMasterTransitDetails(item, masterItem),
                       naverQuery: masterItem.naverQuery,
                       location: masterItem.location,
                       address: masterItem.address,
