@@ -28,6 +28,8 @@ export type PhotoMapState = {
 };
 
 export const photoMapStorageKey =
+  "seoul-travel-hub-photo-map-v3-day1-seed";
+export const previousPhotoMapStorageKey =
   "seoul-travel-hub-photo-map-v2-final-master";
 export const legacyPhotoMapStorageKey = "seoul-travel-hub-photo-map-v1";
 
@@ -66,11 +68,15 @@ const photoPresentation: Record<
 > = {
   "haneul-park": {
     lightType: "秋日草原 / 城市天際線",
-    advice: "利用芒草、步道與首爾天際線安排前後景，14:30 前離開前往下一站。",
+    advice: "利用芒草、步道與首爾天際線安排前後景，13:40 前離開前往下一站。",
   },
   "63-skypicnic": {
     lightType: "日景 / 夕陽 / 藍調 / 夜景",
     advice: "依序拍攝漢江日景、黃金時刻、日落、藍調與首爾夜景。",
+  },
+  "yeouido-hangang-park": {
+    lightType: "午後漢江 / 城市景觀",
+    advice: "沿河岸拍攝漢江、橋樑與城市天際線，15:40 前離開前往 63 大樓。",
   },
   gyeongbokgung: {
     lightType: "上午柔光",

@@ -75,9 +75,12 @@ export type ItineraryDay = {
   items: ItineraryItem[];
 };
 
-export const itineraryStorageKey = "seoul-travel-hub-itinerary-v3-final-master";
+export const itineraryStorageKey =
+  "seoul-travel-hub-itinerary-v4-day1-seed";
+export const previousItineraryStorageKey =
+  "seoul-travel-hub-itinerary-v3-final-master";
 export const legacyItineraryStorageKey = "seoul-travel-hub-itinerary-v2";
-export const hotelStorageKey = "seoul-travel-hub-hotels-v2-final-master";
+export const hotelStorageKey = "seoul-travel-hub-hotels-v3-kotaro-address";
 
 export const categoryLabels: Record<ItineraryCategory, string> = {
   flight: "航班",
@@ -97,6 +100,7 @@ export const categoryLabels: Record<ItineraryCategory, string> = {
 const categoryMap: Record<Category, ItineraryCategory> = {
   AIRPORT: "airport",
   HOTEL: "hotel",
+  TRANSIT: "transit",
   PHOTO: "photo",
   FOOD: "food",
   SHOPPING: "shopping",

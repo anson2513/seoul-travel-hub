@@ -2,6 +2,7 @@ export const outdoorWeatherPlaceIds = [
   "63-skypicnic",
   "n-seoul-tower",
   "haneul-park",
+  "yeouido-hangang-park",
   "cheonggyecheon",
   "bukchon",
 ] as const;

@@ -32,6 +32,7 @@ import {
   migrateLegacyPhotoMapState,
   photoMapStorageKey,
   photoTripDays,
+  previousPhotoMapStorageKey,
   type PhotoMapState,
   type PhotoSpot,
   type PhotoSpotStatus,
@@ -99,7 +100,9 @@ function readStoredPhotoMap() {
       }
     }
 
-    const legacyRaw = window.localStorage.getItem(legacyPhotoMapStorageKey);
+    const legacyRaw =
+      window.localStorage.getItem(previousPhotoMapStorageKey) ??
+      window.localStorage.getItem(legacyPhotoMapStorageKey);
     const legacyState = legacyRaw
       ? (JSON.parse(legacyRaw) as PhotoMapState)
       : null;

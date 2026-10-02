@@ -46,6 +46,7 @@ import {
   hotelStorageKey,
   itineraryStorageKey,
   legacyItineraryStorageKey,
+  previousItineraryStorageKey,
   type ItineraryCategory,
   type ItineraryDay,
   type ItineraryItem,
@@ -201,11 +202,78 @@ function readStoredDays() {
               ? {
                   ...item,
                   naverQuery: masterItem.naverQuery,
+                  location: masterItem.location,
+                  address: masterItem.address,
                   image: masterItem.image ?? item.image,
                 }
               : item;
           }),
         }));
+      }
+    }
+
+    const previousRaw = window.localStorage.getItem(
+      previousItineraryStorageKey,
+    );
+    if (previousRaw) {
+      const previousDays = JSON.parse(previousRaw) as ItineraryDay[];
+      if (Array.isArray(previousDays)) {
+        return defaultItineraryDays.map((masterDay) => {
+          const previousDay = previousDays.find(
+            (day) =>
+              day.id === masterDay.id || day.isoDate === masterDay.isoDate,
+          );
+          if (!previousDay) return masterDay;
+
+          if (masterDay.id !== "day-1") {
+            const masterItems = new globalThis.Map(
+              masterDay.items.map((item) => [item.id, item] as const),
+            );
+
+            return {
+              ...previousDay,
+              items: previousDay.items.map((item) => {
+                if (item.isCustom || item.id.startsWith("custom-")) {
+                  return item;
+                }
+
+                const masterItem = masterItems.get(item.id);
+                return masterItem
+                  ? {
+                      ...item,
+                      naverQuery: masterItem.naverQuery,
+                      location: masterItem.location,
+                      address: masterItem.address,
+                      image: masterItem.image ?? item.image,
+                    }
+                  : item;
+              }),
+            };
+          }
+
+          const previousItems = new globalThis.Map(
+            previousDay.items.map((item) => [item.id, item] as const),
+          );
+          const seededItems = masterDay.items.map((masterItem) => {
+            const previousItem = previousItems.get(masterItem.id);
+            if (!previousItem) return masterItem;
+
+            return {
+              ...masterItem,
+              completed: previousItem.completed ?? masterItem.completed,
+              favorite: previousItem.favorite ?? masterItem.favorite,
+              image:
+                previousItem.image?.startsWith("data:")
+                  ? previousItem.image
+                  : masterItem.image ?? previousItem.image,
+            };
+          });
+          const customItems = previousDay.items
+            .filter((item) => item.isCustom || item.id.startsWith("custom-"))
+            .map((item) => ({ ...item, isCustom: true }));
+
+          return { ...masterDay, items: [...seededItems, ...customItems] };
+        });
       }
     }
 
