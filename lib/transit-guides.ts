@@ -71,12 +71,12 @@ const day1HongdaeRoute = subway(
   "8 號出口",
 );
 
-const day2GyeongbokgungRoute = subway(
+const day2MelodyRoute = subway(
   "2 號線（綠色）→ 3 號線（橘色）",
   "弘大入口站（홍대입구역）",
   "乙支路3街站（을지로3가역）轉乘 3 號線",
   "景福宮站（경복궁역）",
-  "5 號出口",
+  "2 號出口（出站後直行約 200 公尺）",
 );
 
 const day2DongdaemunRoute = subway(
@@ -186,7 +186,8 @@ export const transitGuideByPlaceId: Record<string, TransitGuide> = {
   "hongdae-dinner-day1": day1HongdaeRoute,
   "return-kotaro-day1": walk("元堂馬鈴薯排骨湯 東橋店", "Kotaro House"),
 
-  gyeongbokgung: day2GyeongbokgungRoute,
+  "melody-studio": day2MelodyRoute,
+  gyeongbokgung: walk("旋律韓服 / 旋律攝影", "景福宮", "景福宮站 5 號出口側"),
   songhyeon: walk("景福宮 5 號出口", "三清洞・松峴洞石牆街"),
   samcheong: walk("松峴洞石牆街", "三清洞"),
   "kodak-bukchon": walk("三清洞", "Kodak Bukchon Seoul House"),

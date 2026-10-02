@@ -46,6 +46,8 @@ export type Place = {
   nameKo?: string;
   nameEn?: string;
   addressKo?: string;
+  addressEn?: string;
+  taxiAddressKo?: string;
   area?: string;
   latitude?: number | null;
   longitude?: number | null;
@@ -417,13 +419,34 @@ export const seoul2026Trip: SeoulTrip = {
       id: "day-2",
       date: "2026-10-12",
       weekday: "Mon",
-      title: "景福宮 → 北村 → 益善洞 → 東大門",
-      routeSummary: ["景福宮", "松峴洞", "三清洞", "北村", "清水堂", "東大門文具玩具街", "DDP"],
+      title: "旋律韓服 → 景福宮 → 北村 → 益善洞 → 東大門",
+      routeSummary: ["旋律韓服", "景福宮", "松峴洞", "三清洞", "北村", "清水堂", "東大門文具玩具街", "DDP"],
       notes: ["東大門文具玩具街必須在 16:00 前抵達。"],
       places: [
         place({
-          id: "gyeongbokgung",
+          id: "melody-studio",
           sequence: 1,
+          category: "ATTRACTION",
+          nameZh: "旋律韓服 / 旋律攝影",
+          nameKo: "멜로디한복 / Melody Studio",
+          nameEn: "Melody Hanbok / Melody Studio",
+          addressKo: "서울시 종로구 자하문로 19",
+          addressEn: "19 Jahamun-ro, Jongno-gu, Seoul, South Korea",
+          taxiAddressKo: "서울시 종로구 자하문로 19-1",
+          navigationKeyword: "멜로디한복",
+          nearestStation: "경복궁역",
+          subwayLines: ["Line 3"],
+          exit: "2",
+          walkingDistanceMeters: 200,
+          timePriority: "RECOMMENDED",
+          features: ["韓服租賃", "韓服造型", "妝髮", "韓服攝影"],
+          note: "DAY 2 第一站；完成韓服換裝後前往景福宮。",
+          warning: ["搭乘計程車時可直接出示韓文地址：서울시 종로구 자하문로 19-1"],
+          imageUrl: "/images/itinerary/day-2/melody-studio.webp",
+        }),
+        place({
+          id: "gyeongbokgung",
+          sequence: 2,
           category: "PHOTO",
           nameZh: "景福宮",
           nameKo: "경복궁",
@@ -443,7 +466,7 @@ export const seoul2026Trip: SeoulTrip = {
         }),
         place({
           id: "songhyeon",
-          sequence: 2,
+          sequence: 3,
           category: "PHOTO",
           nameZh: "三清洞・松峴洞石牆街",
           nameKo: "송현동 일대",
@@ -457,7 +480,7 @@ export const seoul2026Trip: SeoulTrip = {
         }),
         place({
           id: "samcheong",
-          sequence: 3,
+          sequence: 4,
           category: "SHOPPING",
           nameZh: "三清洞",
           nameKo: "삼청동",
@@ -469,7 +492,7 @@ export const seoul2026Trip: SeoulTrip = {
         }),
         place({
           id: "kodak-bukchon",
-          sequence: 4,
+          sequence: 5,
           category: "SHOPPING",
           nameZh: "Kodak Bukchon Seoul House",
           nameKo: "코닥 북촌서울하우스",
@@ -482,7 +505,7 @@ export const seoul2026Trip: SeoulTrip = {
         }),
         place({
           id: "bukchon",
-          sequence: 5,
+          sequence: 6,
           category: "PHOTO",
           nameZh: "北村韓屋村",
           nameKo: "북촌한옥마을",
@@ -499,7 +522,7 @@ export const seoul2026Trip: SeoulTrip = {
         }),
         place({
           id: "cheongsudang",
-          sequence: 6,
+          sequence: 7,
           category: "FOOD",
           nameZh: "清水堂",
           nameKo: "청수당 베이커리",
@@ -515,7 +538,7 @@ export const seoul2026Trip: SeoulTrip = {
         }),
         place({
           id: "dongdaemun-toy-street",
-          sequence: 7,
+          sequence: 8,
           category: "SHOPPING",
           nameZh: "東大門文具玩具街",
           nameKo: "동대문 문구완구거리",
@@ -535,7 +558,7 @@ export const seoul2026Trip: SeoulTrip = {
         }),
         place({
           id: "ddp",
-          sequence: 8,
+          sequence: 9,
           category: "PHOTO",
           nameZh: "東大門設計廣場",
           nameKo: "동대문디자인플라자",
@@ -547,7 +570,7 @@ export const seoul2026Trip: SeoulTrip = {
         }),
         place({
           id: "apm-day2",
-          sequence: 9,
+          sequence: 10,
           category: "SHOPPING",
           nameZh: "東大門 APM 補貨",
           nameKo: "에이피엠 플레이스",
@@ -558,7 +581,7 @@ export const seoul2026Trip: SeoulTrip = {
         }),
         place({
           id: "mimiline",
-          sequence: 10,
+          sequence: 11,
           category: "SHOPPING",
           nameZh: "MIMILINE",
           nameKo: "미미라인",

@@ -255,10 +255,12 @@ function readStoredDays() {
             day.items.map((item) => [item.id, item] as const),
           ),
         );
+        const storedItemIds = new globalThis.Set(
+          parsed.flatMap((day) => day.items.map((item) => item.id)),
+        );
 
-        return parsed.map((day) => ({
-          ...day,
-          items: day.items
+        return parsed.map((day) => {
+          const mergedItems = day.items
             .filter(
               (item) =>
                 item.isCustom ||
@@ -281,8 +283,39 @@ function readStoredDays() {
                     : masterItem.image ?? item.image,
                 }
               : item;
-            }),
-        }));
+            });
+
+          const masterDay = defaultItineraryDays.find(
+            (candidate) =>
+              candidate.id === day.id || candidate.isoDate === day.isoDate,
+          );
+          const missingItems = (masterDay?.items ?? []).filter(
+            (item) => !storedItemIds.has(item.id),
+          );
+
+          for (const missingItem of missingItems) {
+            const insertAt = mergedItems.findIndex((item) => {
+              const masterItem = masterItems[item.id];
+              return (
+                masterItem &&
+                (masterItem.sequence ?? Number.MAX_SAFE_INTEGER) >
+                  (missingItem.sequence ?? Number.MAX_SAFE_INTEGER)
+              );
+            });
+
+            if (insertAt === -1) mergedItems.push(missingItem);
+            else mergedItems.splice(insertAt, 0, missingItem);
+          }
+
+          return {
+            ...day,
+            title: masterDay?.title ?? day.title,
+            area: masterDay?.area ?? day.area,
+            theme: masterDay?.theme ?? day.theme,
+            notes: masterDay?.notes ?? day.notes,
+            items: mergedItems,
+          };
+        });
       }
     }
 

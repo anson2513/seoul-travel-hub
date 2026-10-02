@@ -150,6 +150,8 @@ function masterPlaceToItem(item: Place): ItineraryItem {
   const transitGuide = transitGuideByPlaceId[item.id];
   const details = [
     item.nameKo ? `韓文名稱：${item.nameKo}` : null,
+    item.addressEn ? `英文地址：${item.addressEn}` : null,
+    item.taxiAddressKo ? `計程車地址：${item.taxiAddressKo}` : null,
     transitGuide ? `地鐵線別：${transitGuide.line}` : null,
     transitGuide ? `上車站：${transitGuide.boardingStation}` : null,
     transitGuide ? `轉乘：${transitGuide.transfer}` : null,
