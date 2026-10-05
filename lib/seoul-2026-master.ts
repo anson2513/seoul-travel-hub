@@ -597,6 +597,7 @@ export const seoul2026Trip: SeoulTrip = {
           timePriority: "FLEXIBLE",
           photoPriority: true,
           features: ["Urban alley", "Cartoon buildings", "N Seoul Tower framing"],
+          imageUrl: "/images/itinerary/day-3/myeongdong-cartoon-street.webp",
         }),
         place({
           id: "myeongdong-shopping",
@@ -605,6 +606,7 @@ export const seoul2026Trip: SeoulTrip = {
           nameZh: "明洞商圈",
           nameKo: "명동",
           timePriority: "FLEXIBLE",
+          imageUrl: "/images/itinerary/day-3/myeongdong-shopping.webp",
         }),
         place({
           id: "nyunyu",
@@ -617,6 +619,7 @@ export const seoul2026Trip: SeoulTrip = {
           openingHours: { open: "09:00", close: "23:00" },
           timePriority: "FLEXIBLE",
           features: ["Accessories", "Jewelry", "Fashion"],
+          imageUrl: "/images/itinerary/day-3/nyunyu.webp",
         }),
         place({
           id: "spao",
@@ -627,6 +630,7 @@ export const seoul2026Trip: SeoulTrip = {
           addressKo: "서울 중구 명동8나길 15",
           openingHours: { open: "10:00", close: "22:00" },
           timePriority: "FLEXIBLE",
+          imageUrl: "/images/itinerary/day-3/spao.webp",
         }),
         place({
           id: "sura-gejang",
@@ -643,6 +647,7 @@ export const seoul2026Trip: SeoulTrip = {
           mustEat: true,
           mustOrder: ["간장게장"],
           warning: ["請使用精確地址，附近有相似名稱的餐廳。"],
+          imageUrl: "/images/itinerary/day-3/sura-gejang.webp",
         }),
         place({
           id: "national-museum",
@@ -662,6 +667,7 @@ export const seoul2026Trip: SeoulTrip = {
           photoPriority: true,
           features: ["Open Plaza", "Architecture", "N Seoul Tower framing"],
           note: "以拍照為主，不安排深度參觀。",
+          imageUrl: "/images/itinerary/day-3/national-museum.webp",
         }),
         place({
           id: "baekbeom-square",
@@ -675,6 +681,7 @@ export const seoul2026Trip: SeoulTrip = {
           timePriority: "FLEXIBLE",
           photoPriority: true,
           features: ["Hanyang City Wall", "Grass lawn", "N Seoul Tower"],
+          imageUrl: "/images/itinerary/day-3/baekbeom-square.webp",
         }),
         place({
           id: "n-seoul-tower",
@@ -694,6 +701,7 @@ export const seoul2026Trip: SeoulTrip = {
           mustDo: ["Daylight", "Golden Hour", "Sunset", "Blue Hour", "Night View"],
           features: ["Seoul panorama", "Namsan", "Sunset", "Night skyline"],
           warning: ["不要自動改走纜車路線，上一站為南山白凡廣場。"],
+          imageUrl: "/images/itinerary/day-3/n-seoul-tower.webp",
         }),
         place({
           id: "mokgumung",
@@ -710,6 +718,7 @@ export const seoul2026Trip: SeoulTrip = {
           mustEat: true,
           mustOrder: ["Pork", "미나리"],
           features: ["Korean BBQ", "Minari", "Staff grilling"],
+          imageUrl: "/images/itinerary/day-3/mokgumung.webp",
         }),
       ],
     },
