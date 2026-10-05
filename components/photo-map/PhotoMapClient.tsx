@@ -85,17 +85,29 @@ function readStoredPhotoMap() {
         const masterSpots: Record<string, PhotoSpot> = Object.fromEntries(
           defaultPhotoMapState.spots.map((spot) => [spot.id, spot] as const),
         );
+        const storedSpots = new globalThis.Map(
+          parsed.spots.map((spot) => [spot.id, spot] as const),
+        );
+        const syncedSpots = defaultPhotoMapState.spots.map((masterSpot) => {
+          const storedSpot = storedSpots.get(masterSpot.id);
+          if (!storedSpot) return masterSpot;
+
+          return {
+            ...storedSpot,
+            sourcePlaceId: masterSpot.sourcePlaceId,
+            naverQuery: masterSpot.naverQuery,
+            image: storedSpot.image?.startsWith("data:")
+              ? storedSpot.image
+              : masterSpot.image ?? storedSpot.image,
+          };
+        });
+        const customSpots = parsed.spots.filter(
+          (spot) => spot.isCustom && !masterSpots[spot.id],
+        );
 
         return {
           ...parsed,
-          spots: parsed.spots.map((spot) => {
-            if (spot.isCustom) return spot;
-
-            const masterSpot = masterSpots[spot.id];
-            return masterSpot
-              ? { ...spot, naverQuery: masterSpot.naverQuery }
-              : spot;
-          }),
+          spots: [...syncedSpots, ...customSpots],
         };
       }
     }

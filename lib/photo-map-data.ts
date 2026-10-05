@@ -248,7 +248,9 @@ export function migrateLegacyPhotoMapState(
 
     return {
       ...seed,
-      image: stored.image ?? seed.image,
+      image: stored.image?.startsWith("data:")
+        ? stored.image
+        : seed.image ?? stored.image,
       completed: Boolean(stored.completed),
     };
   });
