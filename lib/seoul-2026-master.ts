@@ -869,6 +869,7 @@ export const seoul2026Trip: SeoulTrip = {
           endTime: "08:00",
           timePriority: "RECOMMENDED",
           note: "退房後將行李寄放在住宿。",
+          imageUrl: "/images/itinerary/day-5/kotaro-house-checkout.webp",
         }),
         place({
           id: "starfield-suwon",
@@ -891,6 +892,7 @@ export const seoul2026Trip: SeoulTrip = {
           features: ["22m library", "4F-7F vertical space", "Giant bookshelves", "Escalators", "Architecture"],
           mustDo: ["Central escalator", "Giant bookshelves", "Upper-floor overview", "Human scale photography"],
           warning: ["最晚 12:00 必須離開。", "不要加入水原華城、華城行宮或其他水原景點。"],
+          imageUrl: "/images/itinerary/day-5/starfield-suwon.webp",
         }),
         place({
           id: "return-hongdae",
@@ -901,6 +903,7 @@ export const seoul2026Trip: SeoulTrip = {
           addressKo: "서울 마포구 와우산로 162-8",
           timePriority: "RECOMMENDED",
           note: "目標 13:30-14:00 抵達，只安排午餐、最後購物、伴手禮、咖啡與打包，不再觀光。",
+          imageUrl: "/images/itinerary/day-5/return-hongdae.webp",
         }),
         place({
           id: "day5-souvenirs",
@@ -913,6 +916,7 @@ export const seoul2026Trip: SeoulTrip = {
           mustBuy: true,
           mustBuyItems: ["ORION BICHOBI 비쵸비（獨立包裝）", "Samlip Mini Yakgwa 삼립 미니꿀약과", "Market O REAL BROWNIE 240g / 12 count（獨立包裝）"],
           note: "約 20 位同事的辦公室伴手禮。",
+          imageUrl: "/images/itinerary/day-5/souvenirs.webp",
         }),
         place({
           id: "day5-luggage",
@@ -924,6 +928,7 @@ export const seoul2026Trip: SeoulTrip = {
           startTime: "16:30",
           timePriority: "HARD",
           note: "領取寄放行李，準備前往金浦機場。",
+          imageUrl: "/images/itinerary/day-5/kotaro-house-luggage.webp",
         }),
         place({
           id: "gimpo-departure",
@@ -941,6 +946,7 @@ export const seoul2026Trip: SeoulTrip = {
           mustDo: ["Check-in", "Baggage Drop", "Tax Refund", "Security", "Immigration"],
           transportFromPrevious: { method: ["AREX"], station: "홍대입구역 → 김포공항역" },
           warning: ["目標 18:00 抵達機場。", "本次機場只使用 GMP，絕不可替換為 ICN。"],
+          imageUrl: "/images/itinerary/day-5/gimpo-departure.webp",
         }),
       ],
     },
