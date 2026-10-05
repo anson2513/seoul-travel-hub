@@ -188,9 +188,7 @@ export const transitGuideByPlaceId: Record<string, TransitGuide> = {
 
   "melody-studio": day2MelodyRoute,
   gyeongbokgung: walk("旋律韓服 / 旋律攝影", "景福宮", "景福宮站 5 號出口側"),
-  songhyeon: walk("景福宮 5 號出口", "三清洞・松峴洞石牆街"),
-  samcheong: walk("松峴洞石牆街", "三清洞"),
-  "kodak-bukchon": walk("三清洞", "Kodak Bukchon Seoul House"),
+  "kodak-bukchon": walk("景福宮", "Kodak Bukchon Seoul House"),
   bukchon: walk("Kodak Bukchon Seoul House", "北村韓屋村"),
   cheongsudang: walk("北村韓屋村", "清水堂"),
   "dongdaemun-toy-street": day2DongdaemunRoute,
