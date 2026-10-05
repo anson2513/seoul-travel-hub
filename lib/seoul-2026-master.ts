@@ -746,6 +746,7 @@ export const seoul2026Trip: SeoulTrip = {
           mustEat: true,
           mustOrder: ["낙지해물파전"],
           note: "主點章魚海鮮煎餅，可選配刀削麵。",
+          imageUrl: "/images/itinerary/day-4/jojo-seongsu.webp",
         }),
         place({
           id: "stand-oil",
@@ -757,6 +758,7 @@ export const seoul2026Trip: SeoulTrip = {
           openingHours: { open: "11:00", close: "20:00" },
           timePriority: "FLEXIBLE",
           features: ["Bags", "Korean fashion"],
+          imageUrl: "/images/itinerary/day-4/stand-oil.webp",
         }),
         place({
           id: "blue-elephant",
@@ -770,6 +772,7 @@ export const seoul2026Trip: SeoulTrip = {
           timePriority: "FLEXIBLE",
           features: ["Eyewear", "Sunglasses"],
           note: "使用這個已儲存位置。",
+          imageUrl: "/images/itinerary/day-4/blue-elephant.webp",
         }),
         place({
           id: "haus-nowhere",
@@ -784,6 +787,7 @@ export const seoul2026Trip: SeoulTrip = {
           timePriority: "FLEXIBLE",
           photoPriority: true,
           features: ["Experimental retail", "Art installations", "Giant dog installation", "Robot installation", "IICOMBINED"],
+          imageUrl: "/images/itinerary/day-4/haus-nowhere.webp",
         }),
         place({
           id: "sea-life-coex",
@@ -802,6 +806,7 @@ export const seoul2026Trip: SeoulTrip = {
           mustVisit: true,
           features: ["Recommended duration 90-120 minutes"],
           warning: ["不可重複入場。"],
+          imageUrl: "/images/itinerary/day-4/sea-life-coex.webp",
         }),
         place({
           id: "coex-library",
@@ -821,6 +826,7 @@ export const seoul2026Trip: SeoulTrip = {
           photoPriority: true,
           features: ["Large bookshelves", "Atrium", "Architecture"],
           warning: ["必須與 SEA LIFE COEX 維持同一天。"],
+          imageUrl: "/images/itinerary/day-4/coex-library.webp",
         }),
         place({
           id: "cheonggyecheon",
@@ -840,6 +846,7 @@ export const seoul2026Trip: SeoulTrip = {
           features: ["Night cityscape", "Stream", "Bridges", "City lights", "Water reflection"],
           note: "拍攝後由 을지로입구역搭 Line 2 返回 홍대입구역。",
           warning: ["使用清溪廣場、廣橋、乙支路一帶的中央清溪川，不可替換成東大門段。"],
+          imageUrl: "/images/itinerary/day-4/cheonggyecheon.webp",
         }),
       ],
     },
